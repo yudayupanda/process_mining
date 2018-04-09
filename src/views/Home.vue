@@ -52,8 +52,7 @@
     <el-col :span="24" class="main">
       <div v-bind:class="[isFolded ? 'hidden' :'sidebar']"  id="sidebarDiv">
         <div class="info" id="infoDiv">  
-          <div class="myProjectLogo">我的项目
-
+          <div class="myProjectLogo"><label style="cursor:pointer" @click="queryProjectByKeyWord('')">我的项目</label>
             <span  @click="showAddProject()" title="新添项目">
               <i class="fa fa-plus fa-fw"></i>&nbsp;
             </span>
@@ -81,18 +80,18 @@
               </span>
             </el-popover>
             
-            <div class="projectCount">总计 : {{this.projects.length}}个</div>
+            <div class="projectCount">总计 : {{this.projectCount}}个</div>
           </div>
         </div>
         <div class="searchBlock" id="searchDiv">
             <div style="width:250px;margin:0 auto;">
             <el-input type="text"  prefix-icon="el-icon-search"
-            placeholder="查找项目" name=""></el-input>
+            placeholder="查找项目" v-model="searchKeyWord" @keyup.enter.native="queryProjectByKeyWord(searchKeyWord)"></el-input>
             <i class="fa fa-sort-amount-asc fa-fw"></i>
             </div>
         </div>
       </div>
-      <div   v-bind:class="[isFolded ? 'hidden' :'projectList']" id="projectList">
+      <div   v-bind:class="[isFolded ? 'hidden' :'projectList']" id="projectList" >
         <div v-for="(project,index) in projects" @click="handleProjectBoxClick(project,index)" >
             <span style="float:left;margin-left:2px;color:#000" >{{index+1}}</span>
             <div  :class="index==0?'projectBox clickedBox':'projectBox'" :id="'box'+index">
@@ -111,11 +110,13 @@
                   {{project.description}} 
                 </div>
             </div>
-
+        </div>
+        <div v-show="projects.length === 0" class="emptyProject">
+          暂无数据
         </div>
       </div>
       <div  v-bind:class="[isFolded ? 'hidden' :'location']">
-        我的项目 {{this.currentBoxIndex+1}}/{{this.projects.length}}
+        当前位置 {{this.currentBoxIndex+1}}/{{this.projects.length}}
       </div>
       <div class=""  v-bind:class="[isFolded ? 'contentFolded' :'content']">
         <el-col :span="24">
@@ -203,10 +204,12 @@ import {queryProject} from '../api/api'
 import {updateProject} from '../api/api'
 import {deleteProject} from '../api/api'
 import {checkProjectName} from '../api/api'
+import {compareUp} from '../common/common'
+import {compareDown} from '../common/common'
 export default {
     data() {  
     //检验项目的项目名称，以防重复
-      var  validateProjectName = (rule,value,callback)=>{
+      let  validateProjectName = (rule,value,callback)=>{
         if(!value){
           callback(new Error('请输入项目名称'))
         }else{
@@ -224,6 +227,10 @@ export default {
         }
       } 
      return{
+        //项目计数
+        projectCount:0,
+        //项目搜索的关键字
+        searchKeyWord:'',
         //是否折叠
         isFolded:false,
         //项目默认的排序方式,要用整数！！！不能用字符串！！！
@@ -292,7 +299,7 @@ export default {
         this.email = user.email
         this.uid=user.id
         //查询所有的项目
-        var keyWord=''
+        let keyWord=''
         this.queryProjectByKeyWord(keyWord)
         this.$router.push({path: '/RawLog' })
         //window.addEventListener('scroll', this.onScroll)
@@ -301,13 +308,17 @@ export default {
     methods: {
        //根据关键词搜索相关项目
       queryProjectByKeyWord(keyWord){
+
         let params={keyWord:keyWord,userId:this.uid} 
         queryProject(params).then(data => {
-          if (typeof(data) == "undefined")
+          if (typeof(data) === "undefined")
               return
-          if(data.code===1){
+          if(data.code === 1){
               this.projects=[]
               let projectCount=data.data.length
+              if(keyWord === ''){
+                this.projectCount = projectCount
+              }
               let i=0
               for(;i<projectCount;i++){
                 let pName=data.data[i].projectName
@@ -321,16 +332,30 @@ export default {
                 this.currentProject=this.projects[0]
                 sessionStorage.removeItem('currentProject')
                 sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
+                //刷新路由
+                this.reload()
               }
+
+          }
+          if(data.code === -1){
+            if(data.msg === '没有要搜索的项目'){
+              this.projects = []
+              this.currentBoxIndex = -1
+              sessionStorage.removeItem('currentProject')
+              this.reload()
+            }
           }
         })
+      },
+      search(){
+    
       },
       //删除项目
       deleteProject(project){
         this.$confirm('此操作将永久删除该项目, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
-          type: 'warning',
+          type: 'warning'
         }).then(() => {
           let ids = []
           ids.push(project.pid)
@@ -339,17 +364,26 @@ export default {
           deleteProject(params).then(data => {
             if(data.code===1){
               //删除成功
-              let length = this.projects.length
-              for(var i=0; i<length; i++) {
+              let length = this.projects.length      
+              let deletedProjectIndex = -1
+              for(let i=0; i<length; i++) {
                 if(this.projects[i].name === project.name) {  
                   this.projects.splice(i, 1);
+                  deletedProjectIndex = i
                   break;
                 }
-              } 
+              }
+              this.projectCount = this.projects.length     
+              //如果删除的是最后一个
+              if(deletedProjectIndex === length-1 && this.projectCount != 0){
+             
+                this.lastClickedBox = ''
+                this.handleProjectBoxClick(this.projects[this.projectCount-1],this.projectCount-1)
+              }
             }
         })
         }).catch(() => {
-          console.log("delete cancel")
+         
         })
       },
       //展示添加项目页
@@ -373,7 +407,7 @@ export default {
             let projectName = this.addProjectForm.projectName
             let projectDescription = this.addProjectForm.projectDescription
             let userId = this.uid
-            var params = {projectName: projectName, projectDescription: projectDescription,userId:userId}
+            let params = {projectName: projectName, projectDescription: projectDescription,userId:userId}
             let project={name:projectName,description:projectDescription,pid:0}
             addProject(params).then(data => {
               this.logining = false;
@@ -381,14 +415,23 @@ export default {
                 project.pid=data.data.projectId
                 this.addProjectForm.visible=false  
                 this.projects.push(project) 
+                this.projectCount = this.projects.length
                 this.$notify({
                     title: '提示',
                     message: '添加项目成功！',
                     type: 'success'
                 })
+                let length = this.projects.length
+                //等待页面加载结束，跳转到最先创建的项目
+                this.$nextTick(function() { 
+                  this.currentProject = this.projects[length-1]
+                  sessionStorage.removeItem('currentProject')
+                  sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
+                  this.handleProjectBoxClick(this.projects[length-1],length-1)
+                })
+               
               } else {
-                  if(data.code===-1){
-                    console.log("fail")   
+                  if(data.code===-1){ 
                   }else{
 
                   }
@@ -436,7 +479,6 @@ export default {
                 let pid=this.projects[index].pid
                 let project={pName:projectName,pDesc:projectDescription,pid:pid,index:index}
                 Vue.set(this.projects,index,project)
-                console.log(this.projects[index].pName)
               }
             })
           } else {
@@ -457,11 +499,29 @@ export default {
       },
       //改变项目的排序方式
       changeProjectSortWay(){
-        this.sortWayVisible=false
+        switch(this.projectSortWay){
+          case 0:
+          break
+          case 1:
+          break
+          case 2:
+            this.projects.sort(compareUp('name'));  
+          break
+          case 3:
+             this.projects.sort(compareDown('name')) 
+          break
+          default:
+          break
+        }
+        //更新视图
+        if(this.projects.length !== 0){
+          this.handleProjectBoxClick(this.projects[0],0)
+        }
+        this.sortWayVisible = false
+        
       },
       //记录当前所点击的项目box
       handleProjectBoxClick(project,index){ 
-        console.log("div")
         this.currentProject=project
         sessionStorage.removeItem('currentProject')
         sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
@@ -472,9 +532,9 @@ export default {
         if(id===this.lastClickedBox)
           return
         //clickedBox前面必须加空格
-        document.getElementById(id).className += " clickedBox";
-        if(this.lastClickedBox!=="")
-          document.getElementById( this.lastClickedBox).setAttribute('class','projectBox')
+        document.getElementById(id).className += ' clickedBox';
+        if(this.lastClickedBox !== '')
+          document.getElementById(this.lastClickedBox).setAttribute('class','projectBox')
         this.lastClickedBox=id
 
       },
@@ -498,7 +558,7 @@ export default {
       }, 
       //全屏
       fullScreen(){
-        var ele = document.getElementById("container")
+        let ele = document.getElementById("container")
         // going full-screen
         if (ele.requestFullscreen) {
             ele.requestFullscreen();
@@ -620,7 +680,7 @@ input::-webkit-input-placeholder{text-align: center;font-size: 13px;}
   text-align: left;
   padding-left:20px;
   color: #303133;
-  cursor: pointer;
+
 }
 .myProjectLogo span{
   cursor: pointer;
@@ -666,6 +726,14 @@ input::-webkit-input-placeholder{text-align: center;font-size: 13px;}
   bottom: 40px;
   box-sizing:border-box;  
   background-color: #D9D9D9;
+}
+.emptyProject{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  color:#909399;
+  font-size:14px;
 }
 .projectBox{
   padding-left:10px;

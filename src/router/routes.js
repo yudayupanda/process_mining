@@ -1,10 +1,8 @@
 import Signin from '@/views/Login.vue'
 import Home from '@/views/Home.vue'
-// import ProjectHome from '@/views/ProjectHome.vue'
 import RawLog from '@/views/LogManagement/RawLog.vue'
 import Specificationlog from '@/views/LogManagement/Specificationlog.vue'
 import EventLog from '@/views/LogManagement/EventLog.vue'
-import MyPage from '@/views/MyPage.vue'
 import FusionLogList from '@/views/LogFusion/FusionLogList.vue'
 import FusionOP from '@/views/LogFusion/FusionOP.vue'
 let routes = [
@@ -17,12 +15,6 @@ let routes = [
     {
         path: '/signin',
         component: Signin,
-        name: '',
-        hidden: true
-    },
-    {
-        path: '/MyPage',
-        component: MyPage,
         name: '',
         hidden: true
     },

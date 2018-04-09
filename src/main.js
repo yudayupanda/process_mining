@@ -18,7 +18,7 @@ const router = new VueRouter({
   routes
 })
 router.beforeEach((to, from, next) => {
-  //sessionStorage 方法针对一个 session 进行数据存储。当用户关闭浏览器窗口后，数据会被删除。
+  //sessionStorage 方法针对一个 session 进行数据存储。当用户关闭浏览器窗口后，数据会被删除
   if (to.path == '/signin') {
     sessionStorage.removeItem('user')
   }

@@ -7,16 +7,16 @@
 				<el-form :inline="true">	
 	<!-- 				<el-button-group> -->
 					  <el-button icon="el-icon-upload" @click="uploadForm.visible=true" type="primary" plain>上传</el-button>
-					  <el-button icon="el-icon-tickets" type="primary" plain :disabled="this.sels.length!==1">规范化</el-button>
+				<!-- 	  <el-button icon="el-icon-tickets" type="primary" plain :disabled="this.sels.length!==1">规范化</el-button> -->
 					  <el-button icon="el-icon-delete" type="primary" plain :disabled="this.sels.length===0" @click="batchRemove()">删除</el-button>
 				<!-- 	</el-button-group> -->
 				</el-form>
 				</div>
 			</el-col>
 			<el-col :span="12">
-				<el-input placeholder="请输入内容" v-model="searchInput" class="input-with-select">
+				<el-input placeholder="请输入内容" v-model="searchInput" class="input-with-select" @keyup.enter.native = "queryRawLogByKeyWord(searchInput)">
 				     <template slot="prepend" style="cursor: pointer;">原始日志</template>
-				    <el-button slot="append" icon="el-icon-search"></el-button>
+				    <el-button slot="append" icon="el-icon-search" @click="queryRawLogByKeyWord(searchInput)"></el-button>
   				</el-input>
 			</el-col>
 		</el-col>
@@ -30,7 +30,7 @@
 				    tooltip-effect="dark"
 				    style="width: 100%"
 				    @selection-change="selsChange"
-				    @cell-mouse-enter="enterTable()"
+				    @cell-mouse-enter=""
 				>
 				    <el-table-column
 				      type="selection"
@@ -74,12 +74,15 @@
 				   
 				    <el-table-column
 				      label="操作"
-				      width="160">
+				      width="260">
 				      <span slot-scope="scope" >
+				      	<el-button 
+				          size="mini" type="primary" plain
+				          @click="">规范化</el-button>
 				        <el-button 
 				          size="mini" type="primary" plain
 				          @click="download(scope.row)">下载</el-button>
-				          <el-button
+				        <el-button
 				          size="mini" type="primary" plain @click="deleteSingleRawLog(scope.row)"
 				          >删除</el-button>
 				      </span>
@@ -128,6 +131,7 @@
 </template>
 <script>
 import axios from 'axios'
+import {timestamp2Time} from '../../common/common'
 import {queryRawLog} from '../../api/api'
 import {uploadRawLog} from '../../api/api'
 import {deleteRawLog} from '../../api/api'
@@ -161,13 +165,57 @@ export default {
 			}
 		},
 		methods: {
+			//根据关键字查询相关原始日志
+			queryRawLogByKeyWord(keyWord){
+				this.log=[]
+				//获取当前项目
+				this.currentProject = JSON.parse(sessionStorage.getItem('currentProject'))
+				//如果当前项目不为空
+				if(this.currentProject !== null){
+					this.uploadForm.upLoadData.projectId=this.currentProject.pid
+					//加载完成	
+					let params = {currentPage: 1, lineSize: 10,keyWord:keyWord,projectId:this.currentProject.pid}
+		            queryRawLog(params).then(data => {
+		            	//连接失败
+		            	if (typeof(data) == "undefined")
+		            		return
+			            if (data.code===1) {
+			            	let all= data.data.allRawlogs
+			            	this.total=data.data.rawlogCount
+			            	let i=0,length=all.length
+			            	for(;i<length;i++){
+			            		let createdTime = timestamp2Time(all[i].rawlogCreatetime)
+			            		let normalizedLog,normalizedLogName = ''
+			            		let eventLog,eventLogName = ''
+			            		if(all[i].normalizedlog != null){
+			            			normalizedLog = all[i].normalizedlog
+			            			normalizedLogName = normalizedLog.normalizedlogName
+			            			if(all[i].normalizedlog.eventlog != null){
+			            				eventLog = all[i].normalizedlog.eventlog
+			            				eventLogName = eventLog.eventlog.eventLogName
+			            			}
+
+			            		}
+			            		let rawlog = {rawlogId:all[i].rawlogId,rawLog:all[i].rawlogName,normalizedLog:normalizedLogName,eventLog:eventLog,createdTime:createdTime}
+			            		this.log.push(rawlog)
+			            	}
+			            	
+			            } else {
+			            }
+			            this.loading = false
+		            })
+	            }else{
+	            	this.loading = false
+	            }
+			},
+			//上传文件
 			submitUpload(){
         		this.$refs.upload.submit()
       		},
 			//判断上传的文件格式,在判断格式里上传文件
 		    beforeUpload(file) {   
 		        this.uploadForm.file = file     
-	            var testmsg=file.name.substring(file.name.lastIndexOf('.')+1)                 
+	            let testmsg=file.name.substring(file.name.lastIndexOf('.')+1)                 
 	            const extension = testmsg === 'txt'  
 	            const extension2 = testmsg === 'xes'  
 	            const isLt2M = file.size / 1024 / 1024 < 10  
@@ -194,7 +242,7 @@ export default {
 					          type: 'success'
 					        })
 					        this.uploadForm.visible = false
-					        let createdTime = this.timestamp2Time(data.data.rawlogCreatetime)
+					        let createdTime = timestamp2Time(data.data.rawlogCreatetime)
 					       	let rawlog = {rawlogId:data.data.rawlogId,rawLog:data.data.rawlogName,normalizedLog:'',eventLog:'',createdTime:createdTime}
 		            		this.log.push(rawlog)
 	            		}
@@ -219,10 +267,6 @@ export default {
 	        selsChange(sels){
 				this.sels = sels
 			},
-			//
-			enterTable(){
-
-			},
 	        //单条删除原始日志
 	        deleteSingleRawLog(rawLog){
 	        	this.$confirm(
@@ -232,14 +276,14 @@ export default {
 	        	 ).then(() => {
 	        	 	let ids = []
 	        		ids.push(rawLog.rawlogId)
-	        		var params = {ids:ids.toString()}
+	        		let params = {ids:ids.toString()}
 	        	 	deleteRawLog(params).then(data =>{
 		    	 		if(typeof(data)==="undefined")
 		    	 			return
 		    	 		if(data.code === 1){
 		    	 			//删除成功
 			              let length = this.log.length
-			              for(var i=0; i<length; i++) {
+			              for(let i=0; i<length; i++) {
 			                if(this.log[i].rawlogId === rawLog.rawlogId) {  
 			                  this.log.splice(i, 1);
 			                  break;
@@ -251,8 +295,7 @@ export default {
 				}) 
 	        },
 	        //批量删除原始日志
-	        batchRemove(){
-	        	
+	        batchRemove(){	
 	        	this.$confirm(
 	        		'此操作将永久删除所选中'+this.sels.length+'条原始日志，是否继续?',
 	        	 	'提示',
@@ -264,7 +307,7 @@ export default {
 	        		for(;i<length;i++){
 	        			ids.push(this.sels[i].rawlogId)
 	        		}
-	        		var params = {ids:ids.toString()}
+	        		let params = {ids:ids.toString()}
 	        	 	deleteRawLog(params).then(data =>{
 		    	 		if(typeof(data)==="undefined")
 		    	 			return
@@ -294,78 +337,16 @@ export default {
 		    },
 		    //当前页面
 		    handleCurrentChange(val) {
-        		console.log(`当前页: ${val}`);
       		},
       		// 自定义文件上传的方式
 			upload (item) {
 			    
 			},
-      		//时间戳转可视化时间
-		    timestamp2Time(timestamp){
-		        let result = ''
-		        let date = new Date()
-		        if(timestamp.length != 0){
-		          //前台传来的数据多了八个小时，需要减去八个小时的毫秒数
-		          date.setTime(timestamp-28800000)
-		          let year = date.getFullYear()  
-		          let month = date.getMonth() + 1 
-		          let day = date.getDate()  
-		          let hour = date.getHours()
-		          let minute = date.getMinutes()
-		          let seconds = date.getSeconds()
-		          month = month < 10 ?"0" + month : month
-				  day = day < 10 ? "0" + day : day
-		          hour = hour < 10 ? "0" + hour : hour
-		          minute = minute < 10 ? "0" + minute : minute
-		          seconds = seconds < 10 ? "0" + seconds : seconds
-		          result = year + "-" + month + "-" + day+" "+hour+":"+minute+":"+seconds
-		        }
-		        return result   
-		    },
 		},
 		mounted() {	
 			this.tableHeight=document.body.clientHeight-300
 			this.$nextTick(function() {	
-				this.log=[]
-				//获取当前项目
-				this.currentProject = JSON.parse(sessionStorage.getItem('currentProject'))
-				//如果当前项目不为空
-				if(this.currentProject !== null){
-					this.uploadForm.upLoadData.projectId=this.currentProject.pid
-					//加载完成	
-					var registerParams = {currentPage: 1, lineSize: 10,keyWord:"",projectId:this.currentProject.pid}
-		            queryRawLog(registerParams).then(data => {
-		            	//连接失败
-		            	if (typeof(data) == "undefined")
-		            		return
-			            if (data.code===1) {
-			            	let all= data.data.allRawlogs
-			            	this.total=data.data.rawlogCount
-			            	let i=0,length=all.length
-			            		console.log(length) 
-			            	for(;i<length;i++){
-			            		let createdTime = this.timestamp2Time(all[i].rawlogCreatetime)
-			            		let normalizedLog,normalizedLogName = ''
-			            		let eventLog,eventLogName = ''
-			            		if(all[i].normalizedlog != null){
-			            			normalizedLog = all[i].normalizedlog
-			            			normalizedLogName = normalizedLog.normalizedlogName
-			            			if(all[i].normalizedlog.eventlog != null){
-			            				eventLog = all[i].normalizedlog.eventlog
-			            				eventLogName = eventLog.eventlog.eventLogName
-			            			}
-
-			            		}
-			            		let rawlog = {rawlogId:all[i].rawlogId,rawLog:all[i].rawlogName,normalizedLog:normalizedLogName,eventLog:eventLog,createdTime:createdTime}
-			            		this.log.push(rawlog)
-			            	}
-			            	
-			            } else {
-			            }
-			            this.loading=false
-		            })
-	            }
-
+				this.queryRawLogByKeyWord('')
 			})
 		}
 	}
