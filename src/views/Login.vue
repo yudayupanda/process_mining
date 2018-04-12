@@ -291,7 +291,7 @@
             let nickname = data.data.nickname
             let userAttr ={id:id,email:email,nickname:nickname}
             sessionStorage.setItem('user', JSON.stringify(userAttr))
-            this.$router.push({path: '/Home' })
+            this.$router.push({name: '主页' })
           } else {
                if (retCode ===-1){   
                   this.notify(2,"账号或密码错误，请重试")

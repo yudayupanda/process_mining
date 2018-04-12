@@ -7,12 +7,12 @@
           
         </div>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="2">
         <div class="tools" @click.prevent="isFolded=!isFolded">
           <i class="fa fa-align-justify"></i>
         </div>
       </el-col>
-      <el-col :span="8">
+      <el-col :span="14">
         <!--导航菜单-->
         <!--单个激活 并以 index 作为 path 进行路由跳转-->
         <el-menu  mode="horizontal" class="el-menu-vertical-demo"  :default-active="$route.path" unique-opened background-color="#2e363f"  text-color="#DCDFE6" active-text-color="#57b382" router>
@@ -22,7 +22,8 @@
               <!--用el ui 的title进行solt分发菜单-->
               <template slot="title"><i :class="item.iconCls"></i>{{item.name}}</template>
               <!--item.name和item.children.name来配置菜单栏和子菜单栏的名称-->
-              <el-menu-item  v-for="child in item.children"  :index="child.path" :key="child.path" :route="child.path">{{child.name}}</el-menu-item>
+              <el-menu-item  v-for="child in item.children"  :index="''" 
+                :route="{name:child.name,params: {id:(currentProject === -1 || typeof(currentProject) === 'undefined' ? 'empty':currentProject.index+1),project:(currentProject === -1 || typeof(currentProject) === 'undefined' ? -1:currentProject)}}">{{child.name}}</el-menu-item>
             </el-submenu>
           </template>
         </el-menu>
@@ -125,8 +126,8 @@
                 {{item.name}}
               </el-breadcrumb-item>
             </el-breadcrumb>
-            <transition name="fade" mode="out-in">
-              <router-view  v-if="isRouterAlive"></router-view>
+            <transition name="fade" mode="out-in" >
+                <router-view v-if="isRouterAlive"></router-view>
             </transition>
         </el-col>
       </div>
@@ -278,7 +279,7 @@ export default {
         },
         projects:[],
         //当前所选项目
-        currentProject:'',
+        currentProject:-1,
         uid:'',
         isCollapse:true,
         userName:"",
@@ -288,9 +289,11 @@ export default {
         log:[],
         isRouterAlive:true,
         isShowingUpdateOrDelete:false,
+        isSorted:false,
      }
     },
-
+    created(){ 
+    },
     //页面加载调用获取cookie值
     mounted() {
       this.$nextTick(function() {
@@ -300,15 +303,12 @@ export default {
         this.uid=user.id
         //查询所有的项目
         let keyWord=''
-        this.queryProjectByKeyWord(keyWord)
-        this.$router.push({path: '/RawLog' })
-        //window.addEventListener('scroll', this.onScroll)
+        this.queryProjectByKeyWord(keyWord)   
       })  
     },
     methods: {
        //根据关键词搜索相关项目
       queryProjectByKeyWord(keyWord){
-
         let params={keyWord:keyWord,userId:this.uid} 
         queryProject(params).then(data => {
           if (typeof(data) === "undefined")
@@ -329,23 +329,44 @@ export default {
                 this.projects.push(project)
               }
               if(projectCount!=0){
-                this.currentProject=this.projects[0]
-                sessionStorage.removeItem('currentProject')
-                sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
-                //刷新路由
-                this.reload()
-              }
+                this.currentProject = this.projects[0]
+                let currentRoute = this.$router.history.current.name
+                //第一次进来
+                if(currentRoute === '主页')
+                  this.$router.push({name: '原始日志',params: {id:1,project:this.projects[0]}})
+                else
+                  this.$router.push({name: currentRoute,params: {id:1,project:this.projects[0]}})
+                // switch(currentRoute){
+                //   case '原始日志':
+                //      this.$router.push({name: '原始日志',params: {id:1,project:this.projects[0]}})
+                //   break
+                //   case '规范日志':
+                //      this.$router.push({name: '原始日志',params: {id:1,project:this.projects[0]}})
+                //   break
+                //   case '事件日志':
+                //   break
+                //   default:
+                //   break
 
+                // }
+               
+               
+                //刷新路由
+                //this.reload()
+              }
           }
           if(data.code === -1){
+            this.$router.push({name: '原始日志',params: {id:'empty',project:-1}})
             if(data.msg === '没有要搜索的项目'){
               this.projects = []
               this.currentBoxIndex = -1
-              sessionStorage.removeItem('currentProject')
-              this.reload()
+              //this.reload()
             }
           }
+
         })
+ 
+            
       },
       search(){
     
@@ -373,10 +394,12 @@ export default {
                   break;
                 }
               }
+              if (this.projects.length === 0) {
+                this.$router.push({name: '原始日志',params: {id:'empty',project:-1}})
+              }
               this.projectCount = this.projects.length     
               //如果删除的是最后一个
               if(deletedProjectIndex === length-1 && this.projectCount != 0){
-             
                 this.lastClickedBox = ''
                 this.handleProjectBoxClick(this.projects[this.projectCount-1],this.projectCount-1)
               }
@@ -513,20 +536,35 @@ export default {
           default:
           break
         }
+        this.isSorted = true
         //更新视图
         if(this.projects.length !== 0){
           this.handleProjectBoxClick(this.projects[0],0)
+        
         }
         this.sortWayVisible = false
         
       },
       //记录当前所点击的项目box
       handleProjectBoxClick(project,index){ 
-        this.currentProject=project
-        sessionStorage.removeItem('currentProject')
-        sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
-        this.reload()
-        this.currentBoxIndex=index
+        //保留当前项目信息
+        this.currentProject = project
+        // sessionStorage.removeItem('currentProject')
+        // sessionStorage.setItem('currentProject', JSON.stringify(this.currentProject))
+        //进行排序后刷新页面
+        if(this.isSorted){
+          this.reload()
+          this.isSorted = false
+          let currentRoute = this.$router.history.current.name
+          this.$router.push({name: currentRoute,params: {id:'sort-'+this.projectSortWay+'-'+(index+1),project:this.currentProject}})
+        }else{
+          let currentRoute = this.$router.history.current.name
+          this.$router.push({name: currentRoute,params: {id:index+1,project:this.currentProject}})
+        }
+      
+       
+      
+        this.currentBoxIndex = index
         let id= "box"+index
         //重复按下
         if(id===this.lastClickedBox)
@@ -540,13 +578,12 @@ export default {
       },
        //退出
       logOut(){
+          let _this = this
           this.$confirm('是否退出?', '提示', {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: ' info'
+           
           }).then(() => {
             sessionStorage.removeItem('user')   
-            this.$router.push({path: '/signin' })
+            _this.$router.push({path: 'process-mining/signin' })
           }).catch(() => {
             
           })
@@ -841,6 +878,7 @@ input::-webkit-input-placeholder{text-align: center;font-size: 13px;}
   width: auto;
   padding: 40px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 .contentFolded{
   background: none repeat scroll 0 0 #fff;
@@ -852,5 +890,6 @@ input::-webkit-input-placeholder{text-align: center;font-size: 13px;}
   width: auto;
   padding: 40px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 </style>
