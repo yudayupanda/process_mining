@@ -1,4 +1,4 @@
-/*公用函数模块*/
+/* 公用函数模块 */
 
 /**
 * 时间戳转换
@@ -16,7 +16,7 @@ const timestamp2Time = function (timestamp){
       let minute = date.getMinutes()
       let seconds = date.getSeconds()
       month = month < 10 ?"0" + month : month
-	  day = day < 10 ? "0" + day : day
+	    day = day < 10 ? "0" + day : day
       hour = hour < 10 ? "0" + hour : hour
       minute = minute < 10 ? "0" + minute : minute
       seconds = seconds < 10 ? "0" + seconds : seconds
@@ -70,4 +70,16 @@ const compareDown = function(propertyName){
         }  
 	}
 }
-export {timestamp2Time,compareDown,compareUp}
+/**
+* 判断是否为数字
+*/
+const isNumber = function(value){
+  let regPos = /^\d+(\.\d+)?$/; //非负浮点数
+  let regNeg = /^(-(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*)))$/; //负浮点数
+  if(regPos.test(value) || regNeg.test(value)){
+    return true;
+  }else{
+    return false;
+  }
+}
+export {timestamp2Time,compareDown,compareUp,isNumber}

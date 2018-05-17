@@ -4,17 +4,17 @@ import Vue from 'vue'
 import App from './App'
 import ElementUI from 'element-ui'
 import VueRouter from 'vue-router'
+
 import 'element-ui/lib/theme-chalk/index.css'
 import routes from './router/routes'
 import 'font-awesome/css/font-awesome.css'
-
+import 'vis/dist/vis.min.css'
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.use(VueRouter)
 
 // Vue.http.options.emulateJSON = true
 const router = new VueRouter({
-  mode:'history',
   routes
 })
 router.beforeEach((to, from, next) => {
@@ -25,14 +25,13 @@ router.beforeEach((to, from, next) => {
  // next()
   let user = JSON.parse(sessionStorage.getItem('user'))
   //如果当前没有用户登录过，并且请求的页面不是登录页面
-  if (!user && to.path != '/process-mining/signin') {
+  if (!user && to.path != '/signin') {
     //进入登录首页
-    next({ path: '/process-mining/signin' })
+    next({ path: '/signin' })
   } else {
     //已登录，可以跳转
     next()
   }
-
 })
 /* eslint-disable no-new */
 new Vue({

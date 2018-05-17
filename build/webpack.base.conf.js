@@ -27,10 +27,12 @@ module.exports = {
     alias: {
       'vue$': 'vue/dist/vue.esm.js',
       '@': resolve('src'),
+      'd3':resolve('./lib/d3.js'),
     }
   },
   module: {
     rules: [
+      
       {
         test: /\.vue$/,
         loader: 'vue-loader',

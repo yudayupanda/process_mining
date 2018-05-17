@@ -12,7 +12,7 @@
 			</el-col>
 			<el-col :span="12">
 				<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryRawLogByKeyWord(searchInput)">
-				     <template slot="prepend" style="cursor: pointer;">规范日志</template>
+				     <template slot="prepend" style="cursor: pointer;">原始日志</template>
 				    <el-button slot="append" icon="el-icon-search" @click="queryRawLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button>
   				</el-input>
 			</el-col>
@@ -38,13 +38,11 @@
 				      width="60">
 				    </el-table-column>
 				    <el-table-column
-				      prop="normalizedLog"
-				      label="规范日志"
+				      prop="rawLog"
+				      label="原始日志"
 				      width="200"
-				      show-overflow-tooltip
 				      sortable
-				     >
-				    
+				    >
 				    </el-table-column>
 				     <el-table-column
 				      prop="createdTime"
@@ -54,12 +52,12 @@
 				      show-overflow-tooltip>
 				    </el-table-column>
 				    <el-table-column
-				      prop="rawLog"
-				      label="原始日志"
+				      prop="normalizedLog"
+				      label="规范日志"
 				      width="200"
+				      show-overflow-tooltip
 				      sortable
-				    >
-
+				     >
 				    </el-table-column>
 				    <el-table-column
 				      prop="eventLog"
@@ -68,15 +66,14 @@
 				      show-overflow-tooltip
 				      sortable
 				    >
-				    </el-table-column>
-				   
+				    </el-table-column>   
 				    <el-table-column
 				      label="操作"
 				      width="260">
 				      <span slot-scope="scope" >
 				      	<el-button 
 				          size="mini" type="primary" plain
-				          @click="">规范化</el-button>
+				          @click="showStandardizedForm(scope.row)">规范化</el-button>
 				        <el-button 
 				          size="mini" type="primary" plain
 				          @click="download(scope.row)">下载</el-button>
@@ -95,8 +92,7 @@
       					style="margin-top:10px;"
 					>
 					</el-pagination>
-				</div>
-				
+				</div>	
 			</el-card>
 		</el-col>
 		<!--上传文件-->
@@ -125,17 +121,160 @@
           <el-button type="primary" @click="submitUpload()">确 定</el-button>
         </div>
     </el-dialog>
+    <el-dialog title="规范化" :visible.sync="standardizedForm.visible" :width="standardizedForm.width">
+    	<el-tabs v-model="standardizedForm.tabActiveName">
+		    <el-tab-pane label="数据项格式配置" name="dataItemFormatCog">
+		    	<div class="add-cog">
+		    		<span title="添加" @click="addStandardizedCog(0,standardizedForm.
+					dataItemFormatRadio)" class="cog-icon"><i class="fa fa-plus"></i></span>
+		    		<span title="删除" @click="deleteStandardizedCog(0,standardizedForm.
+					dataItemFormatRadio)" class="cog-icon"><i class="fa fa-trash-o"></i></span>
+		    	</div>
+		    	<el-table
+				    :data="standardizedForm.dataItemFormat"
+				    border
+				    style="width: 100%;overflow-x:auto">
+				    <el-table-column label="" width="50">
+	                  <template slot-scope="scope">
+	                    <el-radio  :label="scope.$index" v-model="standardizedForm.dataItemFormatRadio" @change.native="getCurrentDataItemFormat(scope.$index)">&nbsp;</el-radio>
+	                  </template>
+                	</el-table-column>
+				    <el-table-column
+				      prop="dataItemName"
+				      label="数据项名"
+				      width="120">
+				        <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.dataItemName"  placeholder=""></input>
+       					</template>
+				    </el-table-column>
+				    <el-table-column
+				      prop="placeholder"
+				      label="占位符"
+				      width="120">
+				    </el-table-column>
+				    <el-table-column
+				      prop="formatIdentifier"
+				      label="格式标识符"
+				      width="120">
+				    </el-table-column>
+				    <el-table-column
+				      prop="originalFormat"
+				      label="原格式"
+				      width="280">
+				    </el-table-column>
+				    <el-table-column
+				      prop="targetFormat"
+				      label="目标格式"
+				      >
+				    </el-table-column>			   
+  				</el-table>
+		    </el-tab-pane>
+		    <el-tab-pane label="时间项整合配置" name="timeItemIntegrationCog">
+		    	<div class="add-cog">
+		    		<span title="添加" @click="addStandardizedCog(1,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-plus"></i></span>
+		    		<span title="删除" @click="deleteStandardizedCog(1,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-trash-o"></i></span>
+		    	</div>
+				<el-table
+				    :data="standardizedForm.timeItemIntegrationCog"
+				    border
+				    style="width: 100%;overflow-x:auto">
+				    <el-table-column label="" width="50">
+	                  <template slot-scope="scope">
+	                    <el-radio  :label="scope.$index" v-model="standardizedForm.timeItemIntegrationRadio">&nbsp;</el-radio>
+	                  </template>
+                	</el-table-column>
+				    <el-table-column
+				      prop="originalDataItem"
+				      label="原数据项"
+				      width="420">
+				        <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalDataItem"  placeholder=""></input>
+       					</template>
+				    </el-table-column>
+				    <el-table-column
+				      prop="targetDataItem"
+				      label="目标数据项"
+				      >
+				    </el-table-column>	   		   
+  				</el-table>
+		    </el-tab-pane>
+		    <el-tab-pane label="数据项整合配置" name="dataItemIntegrationCog">
+		    	<div class="add-cog">
+		    		<span title="添加" @click="addStandardizedCog(2,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-plus"></i></span>
+		    		<span title="删除" @click="deleteStandardizedCog(2,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-trash-o"></i></span>
+		    	</div>
+		    	<el-table
+				    :data="standardizedForm.dataItemIntegrationCog"
+				    border
+				    style="width: 100%;overflow-x:auto">
+				    <el-table-column
+				      prop="originalDataItem"
+				      label="原数据项"
+				      width="420">
+				        <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalDataItem"  placeholder=""></input>
+       					</template>
+				    </el-table-column>
+				    <el-table-column
+				      prop="targetDataItem"
+				      label="目标数据项"
+				      >
+				    </el-table-column>	   		   
+  				</el-table>
+		    </el-tab-pane>
+		    <el-tab-pane label="记录格式配置" name="recordFormatCog">
+		    	<div class="add-cog">
+		    		<span title="添加" @click="addStandardizedCog(3,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-plus"></i></span>
+		    		<span title="删除" @click="deleteStandardizedCog(3,standardizedForm.timeItemIntegrationRadio)" class="cog-icon"><i class="fa fa-trash-o"></i></span>
+		    	</div>
+		    	<el-table
+				    :data="standardizedForm.recordFormatCog"
+				    border
+				    style="width: 100%;overflow-x:auto">
+				    <el-table-column label="" width="50">
+	                  <template slot-scope="scope">
+	                    <el-radio  :label="scope.$index" v-model="standardizedForm.recordFormatCogRadio">&nbsp;</el-radio>
+	                  </template>
+                	</el-table-column>
+				    <el-table-column
+				      prop="originalDataItemDelimiter"
+				      label="原数据项分隔符"
+				      width="300">
+				        <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalDataItemDelimiter"  placeholder=""></input>
+       					</template>
+				    </el-table-column>
+				    <el-table-column
+				      prop="originalNameValueDelimiter"
+				      label="原名称值分隔符"
+				      >
+				    </el-table-column>
+				    <el-table-column
+				      prop="originalEmptyValueDelimiter"
+				      label="原空值字符串"
+				      >
+				    </el-table-column>	   		   
+  				</el-table>
+		    </el-tab-pane>
+  		</el-tabs>
+  		<span slot="footer" class="dialog-footer">
+		    <el-button type="primary" @click="startStandardizedRawLog"  id="standardizedBtn">应用</el-button>
+		    <el-button type="primary" style="display:none" :loading="isStandardizing" id="isStandardizingBtn">执行中...</el-button>
+  		</span>
+    </el-dialog>
 	</div>
 </template>
 <script>
-import axios from 'axios'
 import {timestamp2Time} from '../../common/common'
 import {queryRawLog} from '../../api/api'
 import {uploadRawLog} from '../../api/api'
 import {deleteRawLog} from '../../api/api'
+import {standardizedRawLog} from '../../api/api'
 export default {
 		data() {
 			return {
+				//是否第一次进入原始日志页面，用来判断是否刷新当前页面
+				firstEnter:true,
 				loading:true,
 				currentProject:'',
 				projectId:'',
@@ -159,6 +298,63 @@ export default {
 				       format: 'txt', 
 				       projectId:'',
 				    }
+				},
+				//即将规范化的日志
+				toStandardizedRawLog:'',
+				//是否正在执行规范化中
+				isStandardizing:false,
+				standardizedForm:{
+					visible:false,
+					width:"60%",
+					tabActiveName:"dataItemFormatCog",
+					//数据项格式配置默认选择
+					dataItemFormatRadio:0,
+					//时间项格式配置默认选择
+					timeItemIntegrationRadio:0,
+					//数据项整合配置默认选择
+					dataItemIntegrationCogRadio:0,
+					//记录格式配置默认选择
+					recordFormatCogRadio:0,
+					//数据项格式
+					dataItemFormat:[
+						{dataItemName:'[QC]',placeholder:'ABCD',formatIdentifier:'[Method]',originalFormat:'Incident:A-B-C-D,Plan:C/B/ATD,Task:A/B/CTD,DEFAULT:A-B-CTD',targetFormat:'A/B/CTD'
+						},
+					],
+					//时间项整合配置
+					timeItemIntegrationCog:[
+						{
+							originalDataItem:'[QC]',targetDataItem:'Time'
+						},
+					],
+					//数据项整合配置
+					dataItemIntegrationCog:[
+						{
+							originalDataItem:'[Method];[Status]',targetDataItem:'EventName'
+						},
+						{
+							originalDataItem:'[FKPlanID]',targetDataItem:'FKPlanID'
+						},
+						{
+							originalDataItem:'[PKIncidentID]',targetDataItem:'PKIncidentID'
+						},
+						{
+							originalDataItem:'[PKTaskID]',targetDataItem:'PKTaskID'
+						},
+						{
+							originalDataItem:'[PKPlanID]',targetDataItem:'PKPlanID'
+						},
+						{
+							originalDataItem:'[FKIncidentID]',targetDataItem:'FKIncidentID'
+						},
+					],
+					//记录格式配置
+					recordFormatCog:[
+						{
+							originalDataItemDelimiter:'\\t',originalNameValueDelimiter:'',
+							originalEmptyValueDelimiter:''
+						}
+					]
+
 				},
 				fileList: []
 			}
@@ -253,7 +449,7 @@ export default {
 	            		if(data.code == 1){	
 	            			this.$notify({
 					          title: '提示',
-					          message: '上传规范日志成功！',
+					          message: '上传原始日志成功！',
 					          type: 'success'
 					        })
 					        this.uploadForm.visible = false
@@ -355,19 +551,77 @@ export default {
       		},
       		// 自定义文件上传的方式
 			upload (item) {
-			    
 			},
-		},
-		created(){
+			//
+			getCurrentDataItemFormat(){
 
+			},
+			//添加规范化配置
+			addStandardizedCog(index,seleted){	
+				let emptyElement = {dataItemName:'',placeholder:'',formatIdentifier:'',originalFormat:'',targetFormat:''}
+				this.standardizedForm.dataItemFormat.push(emptyElement)
+				this.$nextTick(function() {
+					let length = this.standardizedForm.dataItemFormat.length
+					this.standardizedForm.dataItemFormatRadio = length-1
+					document.getElementById('input'+(length-1)).focus()
+				})		
+			},
+			//删除规范化格式配置
+			deleteStandardizedCog(index,seleted){
+				if(seleted === 0){
+					this.$notify({
+			          title: '提示',
+			          message: '不可删除预置配置!',
+			          type: 'warning'
+			        })
+			        return
+				}
+				this.standardizedForm.dataItemFormat.splice(this.standardizedForm.dataItemFormatRadio, 1)
+				this.$nextTick(function() {
+					let length = this.standardizedForm.dataItemFormat.length
+					this.standardizedForm.dataItemFormatRadio = length-1
+				})
+			},
+			//展示规范化配置
+			showStandardizedForm(row){
+				this.standardizedForm.visible = true
+				this.toStandardizedRawLog = row
+			},
+			//规范化原始日志
+			startStandardizedRawLog(){
+				//因为如果只用一个按钮的话，执行中的旋转状态就不可见
+				document.getElementById('standardizedBtn').style.display = 'none'
+				document.getElementById('isStandardizingBtn').style.display = ''
+				let _this = this
+				_this.isStandardizing = true
+				let rawlogId = this.toStandardizedRawLog.rawlogId
+				let params = {id:rawlogId,format:'',timeNames:'',targetTimeName:'',dataNames:'',
+					oriitemSeparator:'',orinameValSeparator:'',orinulVal:'',targetitemSeparator:'',
+					targetnameValSeparator:'',targetnulVal:''
+				}
+				standardizedRawLog(params).then(data => {
+					if(typeof(data)!="undefined"){
+					}
+					_this.isStandardizing = false
+				    document.getElementById('standardizedBtn').style.display = ''
+					document.getElementById('isStandardizingBtn').style.display = 'none'
+					}	
+				)				
+			}
+		},
+		//页面刷新,重新获取当前项目信息
+		created(){
+			this.currentProject = JSON.parse(sessionStorage.getItem('currentProject'))
+			this.queryRawLogByKeyWord('')
 		},
 		watch: {
     		//监测路由变化,只要变化了就调用获取路由参数方法将数据存储本组件即可
       		'$route': 'getRouterParams'
     	},
-		mounted() {	
+		mounted() {
 			this.tableHeight = document.body.clientHeight-300
 			this.getRouterParams()
+			
 			// this.$router.push({name: '原始日志',params: {id:1,project:-1}})
 		}
 	}
@@ -375,6 +629,7 @@ export default {
 
 <style scoped>
 .main{
+	overflow-y:auto;
 }
 .scroll-table{
 	overflow: auto;
@@ -395,5 +650,30 @@ export default {
 }
 .el-select{
     width: 120px;
-  }
+}
+.table-cell-input{
+	height:40px;
+	width:100%;
+	outline:none;
+	border:none;
+	background:none;
+	font-size: 14px;
+	color:#606266;
+}
+.add-cog{
+	font-size: 25px;
+	color:#445f93;
+	
+	width:100%;
+	background-color:#EBEEF5;
+	height:40px;
+	line-height: 40px;
+	text-align: left;
+	padding-left: 5px;
+	margin-bottom: 10px;
+}
+.cog-icon{
+	cursor: pointer;
+	margin-left: 10px;
+}
 </style>

@@ -17,14 +17,14 @@
                 placeholder="邮箱" auto-complete="off"></el-input>
               </el-form-item>
               <el-form-item prop="password">
-                <el-input v-model="loginRuleForm.password" class="input"  type="password" id="passwordInput"
+                <el-input v-model="loginRuleForm.password" class="input"  type="password" id="passwordInput"  @keyup.enter.native = "handleLoginSubmit('loginRuleForm')"
                 placeholder="密码" >
                 <i class="fa fa-eye fa-2x i-label" slot="suffix" id="eyeLabel" @click="changePassView"></i>
               </el-input>
             </el-form-item>
             <div class="login-options">
               <el-checkbox v-model="loginRuleForm.rememberPass">记住密码</el-checkbox>
-              <input type="button" onclick="" value="忘记密码？" class="login-cannotLogin" /> 
+              <input type="button" onclick="" value="忘记密码？" class="login-cannotLogin"/> 
             </div>
             <el-form-item >
               <el-button type="primary" @click="handleLoginSubmit('loginRuleForm')" :loading="logining" class="login-button">登录</el-button>
@@ -291,10 +291,14 @@
             let nickname = data.data.nickname
             let userAttr ={id:id,email:email,nickname:nickname}
             sessionStorage.setItem('user', JSON.stringify(userAttr))
+            //this.$router.push({name: 'petri网' })
             this.$router.push({name: '主页' })
           } else {
                if (retCode ===-1){   
                   this.notify(2,"账号或密码错误，请重试")
+               }
+               if (retCode ===0){   
+                  this.notify(2,"帐号不存在，请检查")
                }
 
             }

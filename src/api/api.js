@@ -2,6 +2,8 @@ import axios from 'axios'
 import qs from 'qs'
 import {Notification} from 'element-ui'
 let base = 'http://116.56.129.93:8081/processMiningPlatform'
+//let base = 'http://192.168.1.95:8080/processMiningPlatform'
+
 //注：qs将axios发送的数据格式转换为form-data格式，否则单传params会传option请求，
 //后台接收不到或发送成功后台接收参数为null
 
@@ -62,6 +64,8 @@ export const deleteProject = params => {
     })
 }
 
+/** 原始日志模块 **/
+
 //查询原始日志
 export const queryRawLog = params => {
     return axios.get(`${base}/rawlogAction/list`,{params}).then(res => res.data).catch(function (error) {
@@ -81,6 +85,103 @@ export const uploadRawLog = params => {
         showError(error)
     })
 }
+
+//规范化原始日志
+export const standardizedRawLog = params => {
+    return axios.post(`${base}/rawlogAction/normalize`,qs.stringify(params)).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+/** 规范化日志模块 **/
+
+//查询规范化日志
+export const queryNormalizedLog = params => {
+    return axios.get(`${base}/normalizedlogAction/list`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+//上传规范化日志
+export const uploadNormalizedLog = params => {
+    return axios.post(`${base}/normalizedlogAction/upload`,params).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+//事件化规范日志
+export const normalizedLog2EventLog = params => {
+    return axios.post(`${base}/normalizedlogAction/convertToEventlog`,qs.stringify(params)).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+//删除规范化日志
+export const deleteNormalizedLog = params => {
+    return axios.get(`${base}/normalizedlogAction/delete`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+/**事件日志模块**/
+
+//查询事件化日志
+export const queryEventLog = params => {
+    return axios.get(`${base}/eventlogAction/list`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+//上传事件化日志
+export const uploadEventLog = params => {
+    return axios.post(`${base}/eventlogAction/upload`,params).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+//删除事件化日志
+export const deleteEventLog = params => {
+    return axios.get(`${base}/eventlogAction/delete`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+/** 融合日志模块 **/
+
+//查询融合日志
+export const queryMergeLog = params => {
+    return axios.get(`${base}/eventlogAction/listMerge`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+//融合事件日志
+export const mergeEventLogs = params => {
+    return axios.post(`${base}/eventlogAction/merge`,qs.stringify(params)).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+/** 挖掘算法模块 **/
+
+//查询挖掘算法
+export const queryMineAlgorithms = params => {
+    return axios.get(`${base}/algorithmAction/list`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+//获取算法执行函数参数信息
+export const getAlgorithmInfo = params => {
+    return axios.get(`${base}/algorithmAction/getConfig`,{params}).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+
+//挖掘事件日志
+export const mineEventLog = params => {
+    return axios.post(`${base}/miningAction/mining`,params).then(res => res.data).catch(function (error) {
+        showError(error)
+    })
+}
+//显示错误
 function showError(error){
 	statusError(error)
 	Notification.error({
@@ -90,6 +191,7 @@ function showError(error){
     })
     return
 }
+//错误状态中文表示
 function statusError(err){
 	//请求已发出，但服务器响应的状态码不在 2xx 范围内
 	if (err && err.response) {
