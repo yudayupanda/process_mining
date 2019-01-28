@@ -2,17 +2,17 @@
 	<div class="main">
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
-			<el-col :span="12">
+			<el-col :span="16">
 				<div style="margin-left:15px;">
 				<el-form :inline="true">	
 					  <el-button icon="el-icon-delete" type="primary" plain :disabled="this.sels.length===0" @click="batchRemove()">删除</el-button>
 				</el-form>
 				</div>
 			</el-col>
-			<el-col :span="12">
-				<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryMergeLogByKeyWord(searchInput)">
-				     <template slot="prepend" style="cursor: pointer;">融合日志</template>
-				    <el-button slot="append" icon="el-icon-search" @click="queryMergeLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button>
+			<el-col :span="8">
+				<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @>
+				     <template slot="prepend" style="cursor: pointer;">搜索</template>
+				    <!-- <el-button slot="append" icon="el-icon-search" @click="queryMergeLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button> -->
   				</el-input>
 			</el-col>
 		</el-col>
@@ -39,7 +39,7 @@
 				    <el-table-column
 				      prop="mergeLog"
 				      label="融合日志"
-				        width="200"
+
 				      show-overflow-tooltip
 				      sortable
 				    >
@@ -48,20 +48,20 @@
 				      prop="createdTime"
 				      label="创建时间"
 				       sortable
-				        width="200"
+
 				      show-overflow-tooltip>
 				    </el-table-column>
 				    <el-table-column
 				      prop="associatedEventLog_1"
 				      label="关联事件日志-1"
-				      width="200"
+				    
 				      sortable
 				    >
 				    </el-table-column>
 				   	<el-table-column
 				      prop="associatedEventLog_2"
 				      label="关联事件日志-2"
-				      width="200"
+	
 				      show-overflow-tooltip
 				      sortable
 				    >
@@ -72,7 +72,7 @@
 				      <span slot-scope="scope" >
 				        <el-button
 				          size="mini" type="primary" plain @click="deleteSingleMergeLog(scope.row)"
-				          >删除</el-button>
+				          ><i class="fa fa-trash-o fa-lg"></i> 删除</el-button>
 				      </span>
 				    </el-table-column>
 				</el-table>
@@ -124,6 +124,19 @@ export default {
 				fileList: []
 			}
 		},
+		computed:{
+	      logTable:function(){
+	        let search = this.searchInput
+	        if(search){
+	          return  this.log.filter(function(dataNews){
+	            return Object.keys(dataNews).some(function(key){
+	              return String(dataNews[key]).toLowerCase().indexOf(search) > -1
+	            })
+	          })
+	        }
+	        return this.log
+	      },
+    	},
 		methods: {
 			//根据关键字查询相关原始日志
 			queryMergeLogByKeyWord(keyWord){

@@ -2,7 +2,7 @@
   <div class="main">
     <!--工具条-->
     <el-col :span="24" class="toolbar">
-      <el-col :span="12">
+      <el-col :span="16">
         <div style="margin-left:15px;">
           <el-form :inline="true">
             <el-button icon="el-icon-upload" @click="uploadForm.visible=true" type="primary" :disabled="currentProject === -1" plain>上传</el-button>
@@ -10,33 +10,40 @@
           </el-form>
         </div>
       </el-col>
-      <el-col :span="12">
-        <el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native="queryEventLogByKeyWord(searchInput)">
-          <template slot="prepend" style="cursor: pointer;">事件日志</template>
-          <el-button slot="append" icon="el-icon-search" @click="queryEventLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button>
+      <el-col :span="8">
+        <el-input placeholder="请输入内容进行搜索" @change="searchAlgorithmChange" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" >
+          <template slot="prepend" style="cursor: pointer;">搜索</template>
+         <!--  <el-button slot="append" icon="el-icon-search" @click="queryEventLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button> -->
         </el-input>
       </el-col>
     </el-col>
+
+<!--        :data="log.filter(data => !searchInput || data.eventLog.toLowerCase().includes(searchInput.toLowerCase()))" -->
     <el-col :span="24">
       <el-card class="table-div" id="table_card">
-        <el-table :height="tableHeight" v-loading="loading" element-loading-text="加载中..." :data="log" tooltip-effect="dark" style="width: 100%" @selection-change="selsChange" @cell-mouse-enter="">
-          <el-table-column type="selection" width="55">
+        <el-table :height="tableHeight" v-loading="loading" element-loading-text="加载中..." 
+          :data="logTable"
+          tooltip-effect="dark" style="width: 100%" @selection-change="selsChange" >
+          <el-table-column
+            type="selection"
+            :selectable="tableCheckboxInit"
+            width="60">
           </el-table-column>
           <el-table-column type="index" width="60">
           </el-table-column>
-          <el-table-column prop="eventLog" label="事件日志" width="200" show-overflow-tooltip sortable>
+          <el-table-column prop="eventLog" label="事件日志" sortable show-overflow-tooltip sortable>
           </el-table-column>
-          <el-table-column prop="createdTime" label="创建时间" sortable width="200" show-overflow-tooltip>
+          <el-table-column prop="createdTime" label="创建时间" sortable  show-overflow-tooltip>
           </el-table-column>
-          <el-table-column prop="rawLog" label="原始日志" width="200" sortable>
+          <el-table-column prop="rawLog" label="原始日志" sortable>
           </el-table-column>
-          <el-table-column prop="normalizedLog" label="规范日志" width="200" show-overflow-tooltip sortable>
+          <el-table-column prop="normalizedLog" label="规范日志" show-overflow-tooltip sortable>
           </el-table-column>
-          <el-table-column label="操作" width="260">
+          <el-table-column label="操作" width="300">
             <span slot-scope="scope">
-              <el-button size="mini" type="primary" plain @click="mine(scope.row)">挖掘</el-button>
-              <el-button size="mini" type="primary" plain @click="download(scope.row)">下载</el-button>
-              <el-button size="mini" type="primary" plain @click="deleteSingleEventLog(scope.row)">删除</el-button>
+              <el-button size="mini" type="primary" plain @click="mine(scope.row)"><i class="fa fa-caret-square-o-right"></i> 挖掘</el-button>
+              <el-button size="mini" type="primary" plain @click="download(scope.row)"><i class="fa fa-download"></i> 下载</el-button>
+              <el-button size="mini" type="primary" plain @click="deleteSingleEventLog(scope.row)"><i class="fa fa-trash-o fa-lg"></i> 删除</el-button>
             </span>
           </el-table-column>
         </el-table>
@@ -62,7 +69,7 @@
         <el-button type="primary" @click="submitUpload()">确 定</el-button>
       </div>
     </el-dialog>
-    <el-dialog title="挖掘" :visible.sync="mineForm.visible" width="62%">
+    <el-dialog :title="mineForm.title" :visible.sync="mineForm.visible" width="62%">
       <el-steps :active="mineForm.active" finish-status="success" simple>
         <el-step title="1.算法选择"></el-step>
         <el-step title="2.参数设置"></el-step>
@@ -70,29 +77,57 @@
       </el-steps>
 
       <div id="step1" style="margin-top: 20PX;">
-        <el-card>
-          <el-table :height="mineForm.algorithmTableHeight" highlight-current-row v-loading="mineForm.loading" element-loading-text="加载中..." :data="mineForm.mineAlgorithms" tooltip-effect="dark" style="width: 100%" @current-change="handelCurrentMineAlgorithm">
-            <el-table-column type="index" width="100">
+        <el-card style="">
+          <el-table  ref="minerAlgorithmTable":height="mineForm.algorithmTableHeight" highlight-current-row v-loading="mineForm.loading" element-loading-text="加载中..."
+          :data="mineForm.mineAlgorithms.filter(data => !mineForm.searchMineAlgorithm || data.algorithmName.toLowerCase().includes(mineForm.searchMineAlgorithm .toLowerCase())||data.algorithmInformation.toLowerCase().includes(mineForm.searchMineAlgorithm .toLowerCase()))"
+         
+          tooltip-effect="dark" 
+          style="width: 100%" 
+          @current-change="handelCurrentMineAlgorithm">
+            <el-table-column type="index" width="50">
             </el-table-column>
-            <el-table-column prop="algorithmName" label="挖掘算法" width="190" show-overflow-tooltip sortable>
+            <el-table-column prop="algorithmName" label="算法名称"  show-overflow-tooltip >
             </el-table-column>
-            <el-table-column prop="packageName" label="包名" sortable width="180" show-overflow-tooltip>
+            <el-table-column prop="algorithmInformation" label="算法描述"  show-overflow-tooltip >
             </el-table-column>
-            <el-table-column prop="className" label="类名" width="180" sortable>
+            <el-table-column prop="algorithmOutputType" label="输出类型"  show-overflow-tooltip >
             </el-table-column>
-            <el-table-column prop="methodName" label="方法名" width="180" show-overflow-tooltip sortable>
+          <!--   <el-table-column prop="packageName" label="包名" sortable show-overflow-tooltip>
             </el-table-column>
-
+            <el-table-column prop="className" label="类名"  sortable>
+            </el-table-column>
+            <el-table-column prop="methodName" label="方法名"  show-overflow-tooltip sortable>
+            </el-table-column> -->
+            <el-table-column
+              align="right"
+              width="200"
+            >
+            <template slot="header" slot-scope="scope">      
+              <el-input
+              class="input-new"
+              v-model="mineForm.searchMineAlgorithm"
+              size="mini"
+              placeholder="输入关键字搜索"/>
+           </template>
+            <template slot-scope="scope">
+                <el-radio :label="scope.$index" v-model="mineForm.selectMineAlgorithmRadio" >&nbsp;</el-radio>
+            </template>
+        </el-table-column>
+           <!--  <el-table-column  width="100">
+              <span slot-scope="scope">
+                <el-radio v-model="mineForm.selectedMineAlgorithm" label="1"></el-radio>
+              </span>
+            </el-table-column> -->
           </el-table>
-          <div style="auto;height:auto;padding：0 auto;text-align:center;">
+         <!--  <div style="auto;height:auto;padding：0 auto;text-align:center;">
             <el-pagination layout="total,prev, pager, next, jumper" :total="mineForm.algorithmTotal" @current-change="" :current-page.sync="mineForm.currentAlgorithmPage" style="margin-top:10px;">
             </el-pagination>
-          </div>
+          </div> -->
         </el-card>
       </div>
       <div id="step2" style="margin-top: 20PX;">
         <el-card>
-          <div style="width:100%;">
+        <!--   <div style="width:100%;">
             <div class="toolbar">
               <span style="margin-left: 15px;color:#606266;">可视化方式 ： </span>
               <el-select style="width:290px;" v-model="mineForm.visualizationSelected" placeholder="请选择">
@@ -102,36 +137,69 @@
                 </el-option>
               </el-select>
             </div>
+          </div> -->
+          <div class="tip-label" style="margin-top: 10px;" v-if="mineForm.dontNeedParams">
+            无需配置参数
           </div>
-          <el-table :height="mineForm.algorithmTableHeight" v-loading="mineForm.algorithmParamsForm.loading" element-loading-text="加载中..." :data="mineForm.algorithmParamsForm.params" tooltip-effect="dark" style="width: 100%;margin-top: 20px;" @current-change="handelCurrentMineAlgorithm">
+          <!-- <el-table :height="mineForm.algorithmTableHeight" v-loading="mineForm.algorithmParamsForm.loading" element-loading-text="加载中..." :data="mineForm.algorithmParamsForm.params" tooltip-effect="dark" style="width: 100%;margin-top: 20px;" @current-change="handelCurrentMineAlgorithm">
             <el-table-column type="index" width="50">
             </el-table-column>
-            <el-table-column prop="paramName" label="参数名" width="200" show-overflow-tooltip>
+            <el-table-column prop="paramName" label="参数名" show-overflow-tooltip>
             </el-table-column>
-            <el-table-column prop="paramTypeName" label="类型" width="100" show-overflow-tooltip>
+            <el-table-column prop="paramTypeName" label="类型"  show-overflow-tooltip>
             </el-table-column>
-            <el-table-column prop="isNeed" label="必须" width="60">
+            <el-table-column prop="defaultValue" label="默认值" >
             </el-table-column>
-            <el-table-column prop="description" label="描述" width="150" show-overflow-tooltip>
+            <el-table-column label="参数名">
+                  <template slot-scope="scope" >
+                    <el-form :model="scope.row" >
+                      <el-form-item prop="parameterName" size=style="margin-bottom: 16px;" >
+                        <el-input v-model="scope.row.parameterName"  placeholder="请输入参数名称"/>
+                      </el-form-item>
+                    </el-form>
+                  </template>
             </el-table-column>
-            <el-table-column prop="defaultValue" label="默认值" width="110">
+            <el-table-column label="实际值" width="100" show-overflow-tooltip>
+                <template slot-scope="scope">
+                  <el-form :model="scope.row" :rules="mineForm.checkParamsRule" ref="paramInput" style="">
+                    <el-form-item prop="paramValue" v-if="scope.row.inputShow">
+                      <el-input v-if="scope.row.inputShow"  v-model="scope.row.paramValue" ></el-input>
+                    </el-form-item>
+                    <el-form-item ref="boolForm" v-if="!scope.row.inputShow">
+                      <el-select v-model="scope.row.paramValue">
+                        <el-option v-for="item in mineForm.algorithmParamsForm.boolTypeParamName" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+                  </el-form>
+                </template>
+              </el-table-column>
+          </el-table> -->
+          <el-table style="width=100%;" :data="mineForm.algorithmParamsForm.params">
+            <el-table-column type="index" width="50">
             </el-table-column>
-            <el-table-column label="实际值" width="160" show-overflow-tooltip>
-              <template slot-scope="scope">
-                <el-form :model="scope.row" :rules="mineForm.checkParamsRule" ref="paramInput" style="">
-                  <el-form-item prop="paramValue" v-if="scope.row.inputShow">
-                    <el-input v-if="scope.row.inputShow" size="small" v-model="scope.row.paramValue" style="width:100px;margin-top: 15px;"></el-input>
-                  </el-form-item>
-                  <el-form-item ref="boolForm" v-if="!scope.row.inputShow">
-                    <el-select v-model="scope.row.paramValue" style="width:100px;height:60px;margin-top: 30px;">
-                      <el-option v-for="item in mineForm.algorithmParamsForm.boolTypeParamName" :key="item.value" :label="item.label" :value="item.value">
-                      </el-option>
-                    </el-select>
-                  </el-form-item>
-                </el-form>
-              </template>
+            <el-table-column label="参数名" prop="parameterName" >
             </el-table-column>
-          </el-table>
+            <el-table-column label="参数类型" prop="parameterType" >
+            </el-table-column>
+            <el-table-column label="默认值" prop="defaultValue">
+            </el-table-column>
+            <el-table-column label="实际值">
+                  <template slot-scope="scope" >
+                    <el-form :model="scope.row"  :rules="mineForm.checkParamsRule" ref="paramInput" >
+                      <el-form-item v-if="scope.row.inputShow" prop="paramValue" style="margin-bottom: 0px;">
+                        <el-input v-model="scope.row.paramValue" ></el-input>
+                      </el-form-item>
+                      <el-form-item ref="boolForm" style="margin-bottom: 0px;">
+                        <el-select v-model="scope.row.paramValue"  v-if="!scope.row.inputShow" style="width: 100%">
+                          <el-option v-for="item in mineForm.algorithmParamsForm.boolTypeParamName" :key="item.value" :label="item.label" :value="item.value">
+                          </el-option>
+                        </el-select>
+                    </el-form-item>
+                    </el-form>
+                  </template>
+                </el-table-column>
+          </el-table> 
         </el-card>
       </div>
       <div id="step3" style="margin-top: 20PX;">
@@ -141,16 +209,28 @@
         </el-card>
       </div>
       <div class="step-div">
-        <span class="step-label" v-if="(mineForm.active != 1) && !(mineForm.isMining)" id="previous_step" @click="backToPreviousStep()">
-          <i class="fa fa-arrow-left"></i>
+        <div style="height: 20px;width: 100%;"></div>
+        <!-- <span class="step-label" v-if="(mineForm.active != 1) && !(mineForm.isMining)" id="previous_step" @click="backToPreviousStep()">
+          上一步
+        </span> -->
+        <el-button plain size="medium" v-if="(mineForm.active != 1) && !(mineForm.isMining)" id="previous_step" @click="backToPreviousStep()">上一步</el-button>
+        <el-button plain size="medium" v-if="(mineForm.active != 3) && !(mineForm.isMining)" id="next_step" @click="goToNextStep()"
+          :disabled="mineForm.currentMineAlgorithm == -1||mineForm.currentMineAlgorithm==null"
+        >
+          下一步
+        </el-button>
+       <!--  <span class="step-label" v-if="(mineForm.active != 3) && !(mineForm.isMining)" id="next_step" @click="goToNextStep()">
+          下一步
+        </span> -->
+        <el-button plain size="medium" v-if="mineForm.isMining" @click="mineForm.isMining = false">取消
+        </el-button>
+        <el-button plain size="medium" v-if="mineForm.isMining" :loading="true">挖掘中</el-button>
+       <!--  <span class="step-label" v-if="mineForm.isMining" @click="mineForm.isMining = false">
+          取消
         </span>
-        <span class="step-label" v-if="(mineForm.active != 3) && !(mineForm.isMining)" id="next_step" @click="goToNextStep()">
-          <i class="fa fa-arrow-right"></i>
-        </span>
-        <span class="step-label" v-if="mineForm.isMining">
-          <i class="fa fa-refresh fa-spin fa-3x fa-fw" style="font-size: 30px;"></i>
-          <span class="sr-only">Loading...</span>
-        </span>
+        <span class="step-label loading-label" v-if="mineForm.isMining">
+          <i class="fa fa-refresh fa-spin fa-3x fa-fw" style="font-size: 13px;"></i>挖掘中
+        </span> -->
       </div>
     </el-dialog>
   </div>
@@ -161,11 +241,12 @@
   import { isNumber } from '../../common/common'
   import { queryEventLog } from '../../api/api'
   import { uploadEventLog } from '../../api/api'
+  import { base } from '../../api/api'
   import { deleteEventLog } from '../../api/api'
   import { queryMineAlgorithms } from '../../api/api'
   import { getAlgorithmInfo } from '../../api/api'
   import { mineEventLog } from '../../api/api'
-  import { Q } from '../../../lib/qunee-min.js'
+
   export default {
     data() {
       /* 验证器 */
@@ -211,6 +292,15 @@
         //挖掘
         paramInput: '',
         mineForm: {
+          title:"",
+          //选择算法单选框
+          selectMineAlgorithmRadio:"",
+          //搜索算法输入框
+          searchMineAlgorithm:"",
+          //选择的算法
+          selectedMineAlgorithm:"",
+          //所选择的算法是否需要参数
+          dontNeedParams:true,
           isMining: false,
           active: 1,
           currentMineAlgorithm: -1,
@@ -269,6 +359,19 @@
           ],
         },
       }
+    },
+    computed:{
+      logTable:function(){
+        let search = this.searchInput
+        if(search){
+          return  this.log.filter(function(dataNews){
+            return Object.keys(dataNews).some(function(key){
+              return String(dataNews[key]).toLowerCase().indexOf(search) > -1
+            })
+          })
+        }
+        return this.log
+      },
     },
     methods: {
       //根据关键字查询相关日志
@@ -375,19 +478,28 @@
       download(row) {
         let eventLogId = row.eventLogId
         if (eventLogId) {
-          window.open("http://116.56.129.93:8081/processMiningPlatform/eventlogAction/download?eventlogId=" + eventLogId)
+          window.open(`${base}/eventlogAction/download?eventlogId=${eventLogId}`)
         }
       },
-      //
-      handelCurrentMineAlgorithm(val) {
-        this.mineForm.currentMineAlgorithm = val
+      //选择挖掘算法的事件处理函数
+      handelCurrentMineAlgorithm(currentRow, oldCurrentRow) {
+        this.mineForm.currentMineAlgorithm = currentRow
+        let index = this.mineForm.mineAlgorithms.indexOf(currentRow)
+        this.mineForm.selectMineAlgorithmRadio = index
       },
       //挖掘
       mine(row) {
+        //初始化界面
         this.mineForm.visible = true
+        this.mineForm.title = `挖掘 - ${row.eventLog}`
+        this.mineForm.isMining = false
         this.mineForm.currentMineAlgorithm = -1
+        this.mineForm.dontNeedParams = false
+        this.mineForm.algorithmParamsForm.params = []
+
         this.$nextTick(function () {
           document.getElementById('step1').style.display = ''
+         
           if (document.getElementById('step2') != null) {
             document.getElementById('step2').style.display = 'none'
           }
@@ -397,34 +509,28 @@
           this.mineForm.active = 1
           this.mineForm.loading = true
           this.currentEventLog = row
+
           //初始化
           this.mineForm.mineAlgorithms = []
-          let params = { currentPage: 1, lineSize: 10, keyWord: '' }
-          queryMineAlgorithms(params).then(data => {
+          // let params = { currentPage: 1, lineSize: 10, keyWord: '' }
+          queryMineAlgorithms().then(data => {
+          
             //连接失败
             if (typeof (data) == "undefined")
               return
             if (data.code === 1) {
               let all = data.data.allAlgorithms
-              this.mineForm.mineAlgorithms
-              let count = data.data.algorithmCount
-              //算法计数
-              this.mineForm.algorithmTotal = count
+              let count = all.length
               let i = 0
               let algorithmId, algorithmName, packageName, className, methodName
               for (; i < count; i++) {
                 //如果为挖掘算法
                 if (all[i].algorithmType) {
-                  algorithmId = all[i].algorithmId
-                  algorithmName = all[i].algorithmName
-                  packageName = all[i].algorithmPackage
-                  className = all[i].algorithmClassName
-                  methodName = all[i].algorithmMethod
-                  let algorithm = {                    algorithmId: algorithmId, algorithmName: algorithmName, packageName: packageName,
-                    className: className, methodName: methodName                  }
-                  this.mineForm.mineAlgorithms.push(algorithm)
+                  this.mineForm.mineAlgorithms.push(all[i])
                 }
               }
+               this.mineForm.currentMineAlgorithm = this.mineForm.mineAlgorithms[0]
+              this.$refs.minerAlgorithmTable.setCurrentRow(this.mineForm.currentMineAlgorithm)
               this.mineForm.loading = false
             } else {
               this.mineForm.loading = false
@@ -472,35 +578,39 @@
                     this.mineForm.algorithmParamsForm.loading = false
                     return
                   }
-                  let params = data.data.params
-                  if (params != null && params.length != 0) {
+                  //无参算法
+                  if(data.data.params==null){
+                    this.mineForm.dontNeedParams = true
+                    this.mineForm.algorithmParamsForm.loading = false
                     this.mineForm.algorithmParamsForm.params = []
-                    let paramsCount = params.length
-                    let i = 0
-                    let paramName, paramTypeName, defaultValue, displayName, paramValue
+                    return
+                  }
+                  let params = data.data.params
+                  let length = params.length
+                  if (params != null && length != 0) {
+                    //this.mineForm.algorithmParamsForm.params = params
+                    // this.mineForm.algorithmParamsForm.params = []
+                    // let paramsCount = params.length
+                    // let i = 0
+                    // let paramName, paramTypeName, defaultValue, displayName, paramValue
                     let paramMap = {
-                      1: '整型',
-                      2: '浮点型',
-                      3: '整型枚举型',
-                      4: '浮点枚举型',
-                      5: '布尔型',
+                      0: '整型',
+                      1: '浮点型',
+                      2: '字符串',
+                      3: '布尔型',
                     }
-                    //展示下拉选择框或输入框
-                    let paramType, inputShow = true
-                    let isNeed = '是'
-                    let description = ''
-                    for (; i < paramsCount; i++) {
-                      paramName = params[i].name
-                      paramType = params[i].type
-                      if (paramType === 5) {
-                        inputShow = false
+
+                    for(let i=0;i<length;i++){
+                      let type = params[i].parameterType
+                      params[i].parameterType = paramMap[type]
+                      params[i].inputShow = true
+                      params[i].paramValue = params[i].defaultValue
+                      //布尔型
+                      if(type == 3){
+                        params[i].inputShow = false
                       }
-                      paramTypeName = paramMap[paramType]
-                      defaultValue = params[i].defaultValue
-                      displayName = params[i].displayName
-                      let param = { inputShow: inputShow, paramName: paramName, paramType: paramType, paramTypeName: paramTypeName, defaultValue: defaultValue, isNeed: isNeed, description: description, paramValue: defaultValue }
-                      this.mineForm.algorithmParamsForm.params.push(param)
                     }
+                    this.mineForm.algorithmParamsForm.params = params
                   }
                   this.mineForm.algorithmParamsForm.loading = false
                 } else {
@@ -517,7 +627,6 @@
             break
           //开始挖掘
           case 2:
-
             let isValid = false
             let params
             //验证算法参数是否填写正确
@@ -528,7 +637,6 @@
               this.$refs.paramInput.validate((valid) => {
                 if (valid) {
                   isValid = true
-
                 } else {
                 }
               })
@@ -540,38 +648,49 @@
               let originParams = this.mineForm.algorithmParamsForm.params
               let i = 0, paramsCount = originParams.length
               let param
+              let paramMap = {
+                     '整型':0,
+                    '浮点型':1,
+                    '字符串':2,
+                    '布尔型':3,
+              }
               for (; i < paramsCount; i++) {
-                param = { name: originParams[i].paramName, value: originParams[i].paramValue, type: originParams[i].paramType }
+                let type = paramMap[originParams[i].parameterType]
+                param = { name: originParams[i].parameterName, value: originParams[i].paramValue, type:type  }
                 paramList.push(param)
               }
               logId = this.currentEventLog.eventLogId
               methodId = this.mineForm.currentMineAlgorithm.algorithmId
               imageType = 1
-              params = { logId: logId, methodId: methodId, paramList: paramList, imageType: imageType }
+              //日志ID,算法ID,参数列表
+              params = { logId: logId, methodId: methodId, paramList: paramList,imageType:imageType}
               mineEventLog(params).then(data => {
                 //挖掘成功
-                if (data.code === 1) {
+                if (data.code == 1) {
+                   this.$router.push({ name: '图形展示', params: { eventLogResult: data.data} })
                   //挖掘时间
                   // let mineUseTime = data.data.mineUsetime
                   // let netElementList = data.data.netElementList
-                  let result = data.data
-                  //保存事件日志挖掘结果，包含日志id，算法id，可视化类型，以及挖掘结果信息
-                  var date = new Date()
-                  let mineTime = date.toLocaleString()  //获取当前日期和时间
-                  let logName = this.currentEventLog.eventLog
-                  let user = JSON.parse(sessionStorage.getItem('user'))
-                  let algorithmName = this.mineForm.currentMineAlgorithm.algorithmName
-                  let logMineResult = { mineTime: mineTime, user: user, logName: logName, logId: logId, algorithmName: algorithmName, methodId: methodId, imageType: imageType, result: result }
+                  // let result = data.data
+                  // //保存事件日志挖掘结果，包含日志id，算法id，可视化类型，以及挖掘结果信息
+                  // var date = new Date()
+                  // let mineTime = date.toLocaleString()  //获取当前日期和时间
+                  // let logName = this.currentEventLog.eventLog
+                  // let user = JSON.parse(sessionStorage.getItem('user'))
+                  // let algorithmName = this.mineForm.currentMineAlgorithm.algorithmName
+                  // let logMineResult = { mineTime: mineTime, user: user, logName: logName, logId: logId, algorithmName: algorithmName, methodId: methodId, imageType: imageType, result: result }
                   //sessionStorage.setItem('eventLogResult', JSON.stringify(logMineResult))
 
-                  this.mineForm.logsMineResult.push(logMineResult)
-                  let netElementList = result.netElementList
-                  this.mineForm.active += 1
-                  document.getElementById('step2').style.display = 'none'
-                  //document.getElementById('step3').style.display = ''
-                  //this.$router.push({name: '工作流图' })
-                  this.$router.push({ name: '工作流图', params: { eventLogResult: logMineResult } })
-                  this.mineForm.isMining = false
+           //        this.mineForm.logsMineResult.push(logMineResult)
+           //        let netElementList = result.netElementList
+           //        this.mineForm.active += 1
+           //        document.getElementById('step2').style.display = 'none'
+           //        //document.getElementById('step3').style.display = ''
+           //        //this.$router.push({name: '工作流图' })
+           //        this.$router.push({ name: '图形测试', params: { eventLogResult: logMineResult } })
+           //        this.mineForm.isMining = false
+                 
+                  
                 } else {
                   //挖掘失败
                   if (data.code === -1) {
@@ -586,9 +705,7 @@
             } else {
 
             }
-
             break
-
           default:
             break
         }
@@ -605,7 +722,7 @@
       selsChange(sels) {
         this.sels = sels
       },
-      //单条删除事件日志
+      //删除单条事件日志
       deleteSingleEventLog(eventLog) {
         this.$confirm(
           '此操作将永久删除所选中事件日志，是否继续?',
@@ -683,6 +800,14 @@
       },
       //自定义文件上传的方式
       upload(item) {
+      },
+      //表格中的多选框是否可选
+      tableCheckboxInit(row,index){
+        return 1 //可勾选
+      },
+      searchAlgorithmChange(){
+        
+   
       },
     },
 
@@ -765,15 +890,49 @@
   }
   .step-div {
     text-align: right;
-    height: 20px;
+    height: 40px;
     display: block;
   }
   .step-label {
-    padding: 10px;
-    font-size: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-top: 20px;
+    margin-left: 15px;
+    line-height: 30px; 
+    font-size: 14px;
     display: inline-block;
-    height: 40px;
-    color: #9ac0cd;
+    height: 30px;
+    text-align:center;
+    width: 60px;
+    color:    #606266;
     cursor: pointer;
+    border:1px solid #dcdfe6;
+    background-color: #fff;
+    border-radius:4px;
+    transition:.1s;
   }
+  .step-label:hover{
+    color: #409eff;
+    background: #ecf5ff;
+    border-color: #b3d8ff;
+  }
+  .loading-label:hover{
+    color:#606266;
+    background-color: #fff;
+    border:1px solid #dcdfe6;
+    cursor: default;
+  }
+.tip-label{
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 16px;
+    background-color: #ecf8ff;
+    border-radius: 4px;
+    border-left: 5px solid #50bfff;
+    margin: 20px 0;
+    display: block;
+    font-size: 14px;
+    height: 10px;
+    line-height:10px;
+}
 </style>

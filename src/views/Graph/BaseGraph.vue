@@ -36,15 +36,15 @@
           工作流图
           <i class="fa fa-area-chart"></i>
           <!-- <span style="">
-			    		<el-select v-model="layoutSelected" placeholder="" style="margin-top: -25px;margin-left: 150px;">
-						    <el-option
-						      v-for="item in layout"
-						      :key="item.value"
-						      :label="item.label"
-						      :value="item.value">
-						    </el-option>
-						 </el-select>
-					</span> -->
+              <el-select v-model="layoutSelected" placeholder="" style="margin-top: -25px;margin-left: 150px;">
+                <el-option
+                  v-for="item in layout"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value">
+                </el-option>
+             </el-select>
+          </span> -->
           <span style="float:right;margin-top: 0px;">
             <span class="graph-btn" id="importData" title="导入"></span>
             <span class="graph-btn" id="exportData" title="导出"></span>
@@ -366,13 +366,10 @@
     left: 40px;
   }
   #workflowCharts {
-    /* 	position: absolute;
-                                                                                                                                                                                                                                                                                   	top:75px;
-                                                                                                                                                                                                                                                                            		bottom: 0px;
-                                                                                                                                                                                                                                                                            		right:0px;
-                                                                                                                                                                                                                                                                            		left:0px;*/
-    /*height:100%;
-                                                                                                                                                                                                                                                                            		width: 100%;*/
+    position: absolute;
+    left:0px;
+    height:100%;
+    width: 100%;
     margin: -20px -20px;
     border: 1px solid lightgray;
     height: 600px;
@@ -396,8 +393,8 @@
     background-image: url("../../assets/clear.png");
   }
   .my_card {
-    /*-webkit-box-shadow:0 2px 12px 0 rgba(0,0,0,.1);
-                                                                                                                                                                                                                                                                            		box-shadow:0 2px 12px 0 rgba(0,0,0,.1);*/
+    -webkit-box-shadow:0 2px 12px 0 rgba(0,0,0,.1);                                                                                                                             
+    box-shadow:0 2px 12px 0 rgba(0,0,0,.1);
     border: 1px solid #ebeef5;
     color: #303133;
     -webkit-transition: 0.3s;

@@ -14,7 +14,7 @@
             <el-form :model="loginRuleForm" :rules="loginRules" ref="loginRuleForm" >
               <el-form-item prop="loginEmail">
                 <el-input v-model="loginRuleForm.loginEmail" class="input" 
-                placeholder="邮箱" auto-complete="off"></el-input>
+                placeholder="邮箱"></el-input>
               </el-form-item>
               <el-form-item prop="password">
                 <el-input v-model="loginRuleForm.password" class="input"  type="password" id="passwordInput"  @keyup.enter.native = "handleLoginSubmit('loginRuleForm')"
@@ -53,7 +53,7 @@
             <el-form-item prop="verificationCode">
               <el-input v-model="registerRuleForm.verificationCode" :maxlength=6 class="input" 
               placeholder="验证码">
-              <el-button slot="append" id="getCodeBtn" @click="getCode">获取验证码</el-button>
+              <el-button slot="append" id="getCodeBtn" @click="getCode" :disabled="registerRuleForm.disableGetCodeBtn">{{registerRuleForm.getCodeBtnContent}}</el-button>
             </el-input>
           </el-form-item>
           <div class="login-options">
@@ -78,7 +78,7 @@
         <div class="login-input">
           <el-form :model="registerDetailRuleForm" :rules="registerDetailRules" ref="registerDetailRuleForm" >
             <el-form-item prop="nickname">
-              <el-input v-model="registerDetailRuleForm.nickname" class="input"  :maxlength=10
+              <el-input id="registerUserNameInput" v-model="registerDetailRuleForm.nickname" class="input"  :maxlength=10
               placeholder="用户名"></el-input>
           </el-form-item>
           <el-form-item prop="password" :showMessage="showMessage">
@@ -116,10 +116,10 @@
     </div>
   </el-card> 
 </div>
-      <div class="footer">
+      <div class="footer" style="">
         <span class="copyright">
               <!--  Copyright &copy;2018 SCUT All Rights Reserved SCUT B8-311 版权所有  -->
-              &copy;SCUT B8-311
+              &copy;SCUT XU-TEAM
         </span>
       </div>
     </div>
@@ -218,7 +218,7 @@
         logining: false,
         registering:false,
         loginRuleForm: {
-          loginEmail:'',
+          loginEmail:"",
           password:'',
           rememberPass:false,
         },
@@ -226,6 +226,9 @@
           registerEmail: '',
           verificationCode:'',
           allowProtocol:true, 
+          //是否允许获取验证码
+          disableGetCodeBtn:false,
+          getCodeBtnContent:"获取验证码",
         },
         registerDetailRuleForm: {
           nickname:'',
@@ -262,9 +265,18 @@
         },
       }
     },
+    created(){
+      let _this = this
+      document.onkeydown = function(e){
+        let _key = e.keyCode
+        if(_key === 13){
+        _this.handleLoginSubmit('loginRuleForm')
+        }
+      }
+    },
     //页面加载调用获取cookie值
     mounted() {
-        this.getCookie();
+      this.getCookie()
     },
     methods: {
       //登录事件
@@ -310,52 +322,53 @@
         })
       },
       //获取验证码
-      getCode(){
+      getCode(){    
         this.$refs.registerRuleForm.validateField('registerEmail',(error) => {
           if(error===""){
-            var btn =document.getElementById("getCodeBtn")
+            let totalTime = 60
+            this.registerRuleForm.disableGetCodeBtn = true
+            this.registerRuleForm.getCodeBtnContent = totalTime + 's后重新发送'
+            let clock = window.setInterval(() => {
+            totalTime--
+            this.registerRuleForm.getCodeBtnContent = totalTime + 's后重新发送'
+            if (totalTime < 0) {
+             window.clearInterval(clock)
+             this.registerRuleForm.getCodeBtnContent = '重新发送验证码'
+             totalTime = 5
+             this.registerRuleForm.disableGetCodeBtn = false  //这里重新开启
+            }
+             },1000)  
+            let btn =document.getElementById("getCodeBtn")
             btn.setAttribute("disabled", true);
             let email = this.registerRuleForm.registerEmail
-            var params = {email: email}
-              requestVerificationCode(params).then(data => {
+            let params = {email: email}
+                requestVerificationCode(params).then(data => {
                 let retCode = data.code
+                console.log(data)
                 if (retCode ===1) { 
-                  this.notify(1,"验证码已发送，请查收")
-                  var time = 60
-                  btn.innerText=(time)+"秒"
-                  var set=setInterval(function(){
-                  btn.innerText=(--time)+"秒"
-                  if(time==0){
-                    btn.innerText="获取验证码"
-                    btn.removeAttribute("disabled")
-                  }
-                  }, 1000)
-                  setTimeout(function(){
-                  clearInterval(set)
-                  }, 61000)
+                  this.notify(1,"验证码已发送，请查收.")
                 }else{
                   this.notify(2,"错误，请重试")
                 }
             })          
           
               }
-            })   
+          })   
       },
       //开始注册
       handleStartRegisterSubmit(formName){
+        console.log("验证验证码")
         this.$refs[formName].validate((valid) => {  
           if (valid) {
             this.registering = true;
             let email = this.registerRuleForm.registerEmail
             let verificationCode=this.registerRuleForm.verificationCode
             var Params = {email: email, verificationCode: verificationCode}
-
             checkverificationCode(Params).then(data => {
-              this.registering = false;
-              if (data ==="成功") {
+              this.registering = false
+              if (data.code = 1) {
                 this.goToConfirmRegister()
               } else {
-
                 }
             })
 
@@ -373,18 +386,18 @@
             this.registering = true
             let email = this.registerRuleForm.registerEmail
             let nickname = this.registerDetailRuleForm.nickname
-            let pass = this.registerDetailRuleForm.password
-            var registerParams = {email: email, nickname: nickname,pass: pass}
-            requestLogin(registerParams).then(data => {
+            let password = this.registerDetailRuleForm.password
+            var registerParams = {email: email, nickname: nickname,password: password}
+            requestRegister(registerParams).then(data => {
             this.logining = false;
-            if (data ==="成功") {
-              this.notify(data,"登录成功")
+            if (data.code===1) {
+              this.notify(data,"注册成功")
               this.registering = false
-                //  sessionStorage.setItem('user', JSON.stringify(user));
-                //  this.$router.push({ path: '/table' });
+              //保存账户
+              sessionStorage.setItem('user', JSON.stringify(user));
+              this.$router.push({name: '主页' })
               } else {
-
-
+                 this.notify(2,`${data.msg}`)
               }
             });
           } else {
@@ -417,20 +430,30 @@
         this.showMessage=false
         document.getElementById("passInfo").style.display=""
       },
+      resetAllForms(){
+        this.$refs['loginRuleForm'].resetFields()
+        this.$refs['registerRuleForm'].resetFields()
+        this.$refs['registerDetailRuleForm'].resetFields()
+        this.logining = false
+      },
       goToLogin() {
         document.getElementById("register-card").style.display="none"
         document.getElementById("comfirm-register-card").style.display="none"
         document.getElementById("login-card").style.display=""
+        this.resetAllForms()
       },
       goToRegister() {
         document.getElementById("register-card").style.display=""
         document.getElementById("login-card").style.display="none"
         document.getElementById("login-card").style.display="none" 
+        this.resetAllForms()
       },
       goToConfirmRegister(){
         document.getElementById("comfirm-register-card").style.display=""
+        document.getElementById("registerUserNameInput").focus()
         document.getElementById("register-card").style.display="none"
         document.getElementById("login-card").style.display="none" 
+        this.resetAllForms()
       },
       notify(type,message){
         let typeMap={}
@@ -449,8 +472,8 @@
           var exdate = new Date(); //获取时间
           exdate.setTime(exdate.getTime() + 24 * 60 * 60 * 1000 * exdays); //保存的天数
           //字符串拼接cookie
-          window.document.cookie = "userName" + "=" + c_name + ";path=/;expires=" + exdate.toGMTString();
-          window.document.cookie = "userPwd" + "=" + c_pwd + ";path=/;expires=" + exdate.toGMTString();
+          window.document.cookie = "PMuserName" + "=" + c_name + ";path=/;expires=" + exdate.toGMTString();
+          window.document.cookie = "PMuserPwd" + "=" + c_pwd + ";path=/;expires=" + exdate.toGMTString();
         },
       //读取cookie
       getCookie: function() {
@@ -459,9 +482,9 @@
                     for (var i = 0; i < arr.length; i++) {
                         var arr2 = arr[i].split('='); //再次切割
                         //判断查找相对应的值
-                        if (arr2[0] == 'userName') {
+                        if (arr2[0] == 'PMuserName') {
                             this.loginRuleForm.loginEmail = arr2[1]; //保存到保存数据的地方
-                          } else if (arr2[0] == 'userPwd') {
+                          } else if (arr2[0] == 'PMuserPwd') {
                             this.loginRuleForm.password = arr2[1];
                           }
                         }
@@ -471,7 +494,6 @@
       clearCookie: function() {
           this.setCookie("", "", -1); //修改2值都为空，天数为负1天就好了
       },
-
     }
 }
 
@@ -570,12 +592,9 @@
     float: right;
   }
   .footer{
-    /*position: absolute;
-    bottom: 0px;*/
-   /* left:50%;*/
-   margin:0;
-   padding: 0;
-  /*  background-color: #DFE4ED;*/
+    position: fixed;bottom: 10px;
+    margin:0;
+    padding: 0;
     width: 100%;
     font-size: 12px;
     color: #666;

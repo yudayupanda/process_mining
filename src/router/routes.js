@@ -7,13 +7,16 @@ import eventLog from '@/views/LogManagement/EventLog.vue'
 import fusionLogList from '@/views/LogFusion/FusionLogList.vue'
 import fusionOP from '@/views/LogFusion/FusionOP.vue'
 //可视化展示
-import workflowCharts from '@/views/Graph/WorkflowCharts.vue'
+import baseGraph from '@/views/Graph/BaseGraph.vue'
+import graphShow from '@/views/Graph/GraphShow.vue'
 const routes = [
-    {
-        path: '/',
-        redirect: "/signin",
-        hidden: true
-    },
+    //  {
+    //     path: `/signin`,
+    //     component: signin,
+    //     name: '',
+    //     hidden: true
+    // },
+  
     {
         path: `/home`,
         component: home,
@@ -53,16 +56,18 @@ const routes = [
           { path: `/fusionOP`, component: fusionOP, name: '融合操作' },
         ]
     },
-    {
+     {
         path: '/',
         component: home,
         name: '可视化展示',
         // iconCls: 'el-icon-message',//图标样式class
         children: [
-          { path: `/workflowCharts`, component: workflowCharts, name: '工作流图' },
+          // { path: `/baseGraph`, component: baseGraph, name: '基本图形' },
+         { path: `/graphShow`, component: graphShow, name: '图形展示' },
               
         ]
     },
+   
 ];
 
 export default routes

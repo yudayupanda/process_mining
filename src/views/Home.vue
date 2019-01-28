@@ -7,7 +7,8 @@
       </el-col>
       <el-col :span="2">
         <div class="tools" id="fold" @click.prevent="isFolded=!isFolded">
-          <i class="fa fa-align-justify"></i>
+       <!--    <i class="fa fa-align-justify"></i> -->
+            <i  :class="[isFolded? 'fa fa-align-right':'fa fa-align-left']"></i>
         </div>
       </el-col>
       <el-col :span="14">
@@ -649,6 +650,7 @@ export default {
   background-image:url('../assets/logo.png');
   background-size:100% 100%;
   background-repeat:no-repeat;
+    transition: all 0.5s;
 }
 .tools{
   padding: 0px 23px;
@@ -733,6 +735,7 @@ input::-webkit-input-placeholder{text-align: center;font-size: 13px;}
   top: 60px;
   background: #D9D9D9;
   border-right:1px solid #EBEEF5;
+    transition: all 0.5s;
 }
 .projectList{
   overflow-x:hidden;

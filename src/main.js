@@ -30,7 +30,9 @@ router.beforeEach((to, from, next) => {
     next({ path: '/signin' })
   } else {
     //已登录，可以跳转
+    sessionStorage.setItem('from', from.name)
     next()
+
   }
 })
 /* eslint-disable no-new */

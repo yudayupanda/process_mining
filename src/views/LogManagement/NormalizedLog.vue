@@ -2,7 +2,7 @@
 	<div class="main">
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
-			<el-col :span="12">
+			<el-col :span="16">
 				<div style="margin-left:15px;">
 				<el-form :inline="true">	
 					  <el-button icon="el-icon-upload" @click="uploadForm.visible=true" type="primary" :disabled="currentProject === -1" plain>上传</el-button>
@@ -10,10 +10,11 @@
 				</el-form>
 				</div>
 			</el-col>
-			<el-col :span="12">
-				<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryNormalizedLogByKeyWord(searchInput)">
-				     <template slot="prepend" style="cursor: pointer;">规范日志</template>
-				    <el-button slot="append" icon="el-icon-search" @click="queryNormalizedLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button>
+			<el-col :span="8">
+				<!-- <el-input placeholder="请输入内容进行搜索" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryNormalizedLogByKeyWord(searchInput)"> -->
+				<el-input placeholder="请输入内容进行搜索" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" >
+				     <template slot="prepend" style="cursor: pointer;">搜索</template>
+				   <!--  <el-button slot="append" icon="el-icon-search" @click="queryNormalizedLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button> -->
   				</el-input>
 			</el-col>
 		</el-col>
@@ -23,7 +24,7 @@
 				 	:height="tableHeight"
 				 	v-loading="loading"
 				 	element-loading-text="加载中..."
-				    :data="log"
+				    :data="logTable"
 				    tooltip-effect="dark"
 				    style="width: 100%"
 				    @selection-change="selsChange"
@@ -39,8 +40,7 @@
 				    </el-table-column>
 				    <el-table-column
 				      prop="normalizedLog"
-				      label="规范日志"
-				      width="200"
+				      label="规范日志"				    
 				      show-overflow-tooltip
 				      sortable
 				     >
@@ -48,38 +48,36 @@
 				     <el-table-column
 				      prop="createdTime"
 				      label="创建时间"
-				       sortable
-				        width="200"
+				       sortable		    
 				      show-overflow-tooltip>
 				    </el-table-column>
 				    <el-table-column
 				      prop="rawLog"
 				      label="原始日志"
-				      width="200"
 				      sortable
 				    >
 				    </el-table-column>
 				    <el-table-column
 				      prop="eventLog"
 				      label="事件日志"
-				        width="200"
 				      show-overflow-tooltip
 				      sortable
 				    >
 				    </el-table-column>   
 				    <el-table-column
 				      label="操作"
-				      width="260">
+				      width="300"
+				     >
 				      <span slot-scope="scope" >
 				      	<el-button 
 				          size="mini" type="primary" plain
-				          @click="normalizedLogToEventLog(scope.row)">事件化</el-button>
+				          @click="normalizedLogToEventLog(scope.row)"><i class="fa fa-caret-square-o-right"></i> 事件化</el-button>
 				        <el-button 
 				          size="mini" type="primary" plain
-				          @click="download(scope.row)">下载</el-button>
+				          @click="download(scope.row)"><i class="fa fa-download"></i> 下载</el-button>
 				        <el-button
 				          size="mini" type="primary" plain @click="deleteSingleNormalizedLog(scope.row)"
-				          >删除</el-button>
+				          ><i class="fa fa-trash-o fa-lg"></i> 删除</el-button>
 				      </span>
 				    </el-table-column>
 				</el-table>
@@ -129,6 +127,7 @@ import {queryNormalizedLog} from '../../api/api'
 import {uploadNormalizedLog} from '../../api/api'
 import {deleteNormalizedLog} from '../../api/api'
 import {normalizedLog2EventLog} from '../../api/api'
+import {base} from '../../api/api'
 export default {
 		data() {
 			return {
@@ -160,6 +159,19 @@ export default {
 				fileList: []
 			}
 		},
+		computed:{
+	      logTable:function(){
+	        let search = this.searchInput
+	        if(search){
+	          return  this.log.filter(function(dataNews){
+	            return Object.keys(dataNews).some(function(key){
+	              return String(dataNews[key]).toLowerCase().indexOf(search) > -1
+	            })
+	          })
+	        }
+	        return this.log
+	      },
+    	},
 		methods: {
 			//根据关键字查询相关原始日志
 			queryNormalizedLogByKeyWord(keyWord){
@@ -265,7 +277,7 @@ export default {
 	        download(row){
 	        	let normalizedlogId = row.normalizedlogId
 	        	if(normalizedlogId){
-	        		window.open("http://116.56.129.93:8081/processMiningPlatform/normalizedlogAction/download?normalizedlogId="+normalizedlogId) 
+	        		window.open(`${base}/normalizedlogAction/download?normalizedlogId=${normalizedlogId}`) 
 	        	}
 	        },
 	        //获取当前所选项
