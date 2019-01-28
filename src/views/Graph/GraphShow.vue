@@ -11,7 +11,7 @@
         
           <span style="float:right;border-left:1px solid #c5c5c5;">
             <span class="graph-btn" id="importData" title="导入" @click="openImportJsonDialog()"></span>
-            <span class="graph-btn" id="exportData" title="导出"></span>
+            <span class="graph-btn" id="exportData" title="导出" @click="exportToJson()"></span>
             <span class="graph-btn" id="clear" title="擦除" @click="clearGraph()"></span>
           </span>
           <el-select v-model="layoutValue" placeholder="请选择" size="mini" style="float: right;margin-right: 10px;" @change="changeLayout()"> 
@@ -41,9 +41,11 @@
   import { test } from '../../api/api'
   import { DataSet, Network } from '../../common/vis.js'
   import 'vis/dist/vis.min.css'
+  import FileSaver from 'file-saver'
   export default {
     data() {
       return {
+        graph:"",
         isDrawing:false,
         graphTitle:"",
         drawingProgresValue:0,
@@ -166,6 +168,13 @@
       }
     },
     methods: {
+      //导出成json数据
+      exportToJson(){
+        const data = this.graph
+        const blob = new Blob([data], {type: ''})
+        FileSaver.saveAs(blob, 'Graph.json')
+     
+      },
       //导入json配置文件
       openImportJsonDialog(){
           document.getElementById("select_json_btn").click()
@@ -192,6 +201,7 @@
                     // 读取文件内容
                     let jsonString = evt.target.result 
                     let graph = JSON.parse(jsonString)
+                    _this.graph = graph
                     _this.nodes = graph.nodes
                     console.log(_this.nodes)
                     _this.edges = graph.edges
@@ -316,11 +326,15 @@
       //清空图形
       clearGraph(){
         if(this.network!=null){
-          this.network.destroy()
-          this.network = null
-          this.nodes = []
-          this.edges = []
-          this.graphTitle=""
+           this.$confirm('确认清空？')
+          .then(_ => {
+            this.network.destroy()
+            this.network = null
+            this.nodes = []
+            this.edges = []
+            this.graphTitle=""
+          })
+          .catch(_ => {})
         }
       },
       draw(){
@@ -377,7 +391,8 @@
       this.$nextTick(function () {
         document.getElementById('fold').click()
        // let evenlogMineResult = JSON.parse(sessionStorage.getItem('eventLogResult'))
-       let evenlogMineResult = this.$route.params.eventLogResult
+        let evenlogMineResult = this.$route.params.eventLogResult
+        this.graph = JSON.stringify(this.$route.params.eventLogResult)
          console.log(evenlogMineResult)
         //上一个页面
         let from = sessionStorage.getItem('from')
