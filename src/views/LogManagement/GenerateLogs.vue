@@ -648,10 +648,10 @@
 
 	#network-corner {
 		/* position: absolute;
-																													    margin-top: -202px;
-																													    margin-left: 498px;
-																													    width: 200px;
-																													    height: 200px; */
+																														    margin-top: -202px;
+																														    margin-left: 498px;
+																														    width: 200px;
+																														    height: 200px; */
 		border-top: 1px solid #ebeef5;
 		border-left: 1px solid #ebeef5;
 		border-bottom: 0px;
