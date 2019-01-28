@@ -2,7 +2,7 @@
 	<div class="main">
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
-			<el-col :span="16">
+			<el-col :span="12">
 				<div style="margin-left:15px;">
 				<el-form :inline="true">	
 					  <el-button icon="el-icon-upload" @click="uploadForm.visible=true" type="primary" :disabled="currentProject === -1" plain>上传</el-button>
@@ -10,23 +10,20 @@
 				</el-form>
 				</div>
 			</el-col>
-			<el-col :span="8">
-			<!-- 	<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryRawLogByKeyWord(searchInput)"> -->
-					<el-input placeholder="请输入内容进行搜索" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select">
-
-				     <template slot="prepend" style="cursor: pointer;">搜索</template>
-		<!-- 		    <el-button slot="append" icon="el-icon-search" @click="queryRawLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button> -->
+			<el-col :span="12">
+				<el-input placeholder="请输入内容" v-model="searchInput" :disabled="currentProject === -1" class="input-with-select" @keyup.enter.native = "queryRawLogByKeyWord(searchInput)">
+				     <template slot="prepend" style="cursor: pointer;">原始日志</template>
+				    <el-button slot="append" icon="el-icon-search" @click="queryRawLogByKeyWord(searchInput)" :disabled="currentProject === -1"></el-button>
   				</el-input>
 			</el-col>
 		</el-col>
-<!-- 		tableData.filter(data => !search || data.algorithmName.toLowerCase().includes(search.toLowerCase())|| data.algorithmInformation.toLowerCase().includes(search.toLowerCase())) -->
 		<el-col :span="24">
 			<el-card class="table-div" id="table_card">
 				<el-table 
 				 	:height="tableHeight"
 				 	v-loading="loading"
 				 	element-loading-text="加载中..."
-				 	:data="logTable"
+				    :data="log"
 				    tooltip-effect="dark"
 				    style="width: 100%"
 				    @selection-change="selsChange"
@@ -43,6 +40,7 @@
 				    <el-table-column
 				      prop="rawLog"
 				      label="原始日志"
+				      width="200"
 				      sortable
 				    >
 				    </el-table-column>
@@ -50,13 +48,13 @@
 				      prop="createdTime"
 				      label="创建时间"
 				       sortable
-				       
+				        width="200"
 				      show-overflow-tooltip>
 				    </el-table-column>
 				    <el-table-column
 				      prop="normalizedLog"
 				      label="规范日志"
-				      
+				      width="200"
 				      show-overflow-tooltip
 				      sortable
 				     >
@@ -64,24 +62,24 @@
 				    <el-table-column
 				      prop="eventLog"
 				      label="事件日志"
-				      
+				        width="200"
 				      show-overflow-tooltip
 				      sortable
 				    >
 				    </el-table-column>   
 				    <el-table-column
 				      label="操作"
-				      width="300">
+				      width="260">
 				      <span slot-scope="scope" >
 				      	<el-button 
 				          size="mini" type="primary" plain
-				          @click="showStandardizedForm(scope.row)"><i class="fa fa-caret-square-o-right"></i> 规范化</el-button>
+				          @click="showStandardizedForm(scope.row)">规范化</el-button>
 				        <el-button 
 				          size="mini" type="primary" plain
-				          @click="download(scope.row)"><i class="fa fa-download"></i> 下载</el-button>
+				          @click="download(scope.row)">下载</el-button>
 				        <el-button
 				          size="mini" type="primary" plain @click="deleteSingleRawLog(scope.row)"
-				          ><i class="fa fa-trash-o fa-lg"></i> 删除</el-button>
+				          >删除</el-button>
 				      </span>
 				    </el-table-column>
 				</el-table>
@@ -146,7 +144,7 @@
 				      label="数据项名"
 				      width="120">
 				        <template   slot-scope="scope" >
-           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.dataItemName"  placeholder=""></input>
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.dataItemName"  placeholder="">
        					</template>
 				    </el-table-column>
 				    <el-table-column
@@ -243,18 +241,24 @@
 				      label="原数据项分隔符"
 				      width="300">
 				        <template   slot-scope="scope" >
-           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalDataItemDelimiter"  placeholder=""></input>
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalDataItemDelimiter"  placeholder="">
        					</template>
 				    </el-table-column>
 				    <el-table-column
 				      prop="originalNameValueDelimiter"
 				      label="原名称值分隔符"
 				      >
+					  <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalNameValueDelimiter"  placeholder="">
+       					</template>
 				    </el-table-column>
 				    <el-table-column
 				      prop="originalEmptyValueDelimiter"
 				      label="原空值字符串"
 				      >
+					  <template   slot-scope="scope" >
+           					<input :id="'input'+scope.$index" class="table-cell-input" v-model="scope.row.originalEmptyValueDelimiter"  placeholder="">
+       					</template>
 				    </el-table-column>	   		   
   				</el-table>
 		    </el-tab-pane>
@@ -271,7 +275,6 @@ import {timestamp2Time} from '../../common/common'
 import {queryRawLog} from '../../api/api'
 import {uploadRawLog} from '../../api/api'
 import {deleteRawLog} from '../../api/api'
-import {base} from '../../api/api'
 import {standardizedRawLog} from '../../api/api'
 export default {
 		data() {
@@ -353,7 +356,7 @@ export default {
 					//记录格式配置
 					recordFormatCog:[
 						{
-							originalDataItemDelimiter:'\\t',originalNameValueDelimiter:'',
+							originalDataItemDelimiter:';',originalNameValueDelimiter:' ',
 							originalEmptyValueDelimiter:''
 						}
 					]
@@ -363,19 +366,6 @@ export default {
 				fileList: []
 			}
 		},
-		computed:{
-	      logTable:function(){
-	        let search = this.searchInput
-	        if(search){
-	          return  this.log.filter(function(dataNews){
-	            return Object.keys(dataNews).some(function(key){
-	              return String(dataNews[key]).toLowerCase().indexOf(search) > -1
-	            })
-	          })
-	        }
-	        return this.log
-	      },
-	    },
 		methods: {
 			//根据关键字查询相关原始日志
 			queryRawLogByKeyWord(keyWord){
@@ -487,7 +477,7 @@ export default {
 	        download(row){
 	        	let rawlogId = row.rawlogId
 	        	if(rawlogId){
-	        		window.open(`${base}/rawlogAction/download?rawlogId=${rawlogId}`) 
+	        		window.open("http://116.56.129.93:8081/processMiningPlatform/rawlogAction/download?rawlogId="+rawlogId) 
 	        	}
 	        },
 	        //获取当前所选项
@@ -642,10 +632,13 @@ export default {
 				//去掉最后一个逗号
 				format = format.substring(0,format.length-1)
 				let oriitemSeparator = this.standardizedForm.recordFormatCog[0].originalDataItemDelimiter
-				let orinameValSeparator = this.standardizedForm.recordFormatCog[0].originalDataItemDelimiter
+				let orinameValSeparator = this.standardizedForm.recordFormatCog[0].originalNameValueDelimiter
 				let orinulVal = this.standardizedForm.recordFormatCog[0].originalEmptyValueDelimiter
 				let targetTimeName = this.standardizedForm.timeItemIntegrationCog[0].targetDataItem
 				let timeNames = this.standardizedForm.timeItemIntegrationCog[0].originalDataItem
+								
+
+			
 				// let params = {dataNames:dataNames,format:format,id:rawlogId,oriitemSeparator:oriitemSeparator,orinameValSeparator:' ',orinulVal:' ',targetTimeName:targetTimeName,targetitemSeparator:' ',
 				// 	targetnameValSeparator:'',targetnulVal:'',timeNames:timeNames	
 				// }
@@ -655,9 +648,9 @@ export default {
 					timeNames:timeNames,
 					targetTimeName:targetTimeName,
 					dataNames:dataNames,
-					oriitemSeparator:'\\t',
-					orinameValSeparator:'',
-					orinulVal:'',
+					oriitemSeparator:oriitemSeparator,
+					orinameValSeparator:orinameValSeparator,
+					orinulVal:orinulVal,
 					targetitemSeparator:'',
 					targetnameValSeparator:'',
 					targetnulVal:''
@@ -700,6 +693,7 @@ export default {
 			
 			this.$nextTick(function() {
       			this.tableHeight = document.getElementById('table_card').scrollHeight*0.85
+      			//this.getRouterParams()
       		})  
 			
 			
@@ -726,7 +720,7 @@ export default {
 }
 .table-div{
 	position: absolute;
-	bottom:20px;
+	bottom:0px;
 	top:150px;
 	right:40px;
 	left:40px;
