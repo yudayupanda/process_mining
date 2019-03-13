@@ -78,6 +78,25 @@
 					</el-select>&nbsp;&nbsp;
 					<el-button size="small" type="primary" plain @click="addFlowRelation">添加流关系</el-button>
 				</p>
+				<!-- 选择petri网 -->
+				<p>petri网选择：
+					<el-select
+						class="width-300"
+						size="small"
+						v-model="chosenPetriNet"
+						placeholder="请选择petri网"
+						@change="editPetriNet"
+					>
+						<el-option label="新建petri网" value="new petriNet"></el-option>
+						<el-option
+							v-for="item in petriNets"
+							:key="item.value"
+							:label="item.label"
+							:value="item.value"
+						></el-option>
+					</el-select>&nbsp;&nbsp;
+					<el-button size="small" type="danger" plain @click="deletePetriNet">删除</el-button>
+				</p>
 			</form>
 
 			<!-- petri网展示 -->
@@ -98,7 +117,7 @@
 							<p class="padding-left-15">结束库所 end</p>
 						</div>
 						<div v-else>
-							<p class="padding-left-15">库所编号：1</p>
+							<p class="padding-left-15">库所编号：{{chosenPlace.id}}</p>
 							<p class="padding-left-15">库所名称：</p>
 							<el-input size="small" v-model="chosenPlace.name"></el-input>
 							<p class="text-align-center">
@@ -114,7 +133,7 @@
 					</div>
 					<!-- 选择变迁 -->
 					<div class="network-corner-content" v-show="chosenTransition.flag">
-						<p class="padding-left-15">变迁编号：1</p>
+						<p class="padding-left-15">变迁编号：{{chosenTransition.id}}</p>
 						<p class="padding-left-15">变迁名称：</p>
 						<el-input size="small" v-model="chosenTransition.name"></el-input>
 						<p class="text-align-center">
@@ -140,6 +159,10 @@
 				</div>
 				<img id="petriNetImg" src="../../assets/petriNet.png" alt>
 			</div>
+			<p>Petri网名称：
+				<el-input class="width-300" size="small" v-model="petriNet" placeholder="请输入Petri网名称"></el-input>&nbsp;&nbsp;
+				<el-button size="small" type="primary" plain @click="savePetriNet">保存</el-button>
+			</p>
 
 			<form action>
 				<p>
@@ -191,6 +214,7 @@
 					fromPlaceholder: "请选择流关系方向", //源占位符
 					toPlaceholder: "请选择流关系方向" //目标占位符
 				},
+				petriNet: "", //petri网
 				places: [
 					//库所集
 					{
@@ -207,6 +231,9 @@
 				],
 				flowRelations: [
 					//流关系集
+				],
+				petriNets: [
+					//petri网集
 				],
 				nodes: {},
 				edges: {},
@@ -231,6 +258,7 @@
 					to: "",
 					flag: false
 				},
+				chosenPetriNet: "", //选择的petri网
 				traceNumber: "",
 				noiseRatio: "",
 				eventlogName: "",
@@ -240,6 +268,7 @@
 		components: {},
 		created: function() {
 			this.getProjects();
+			this.getPetriNets();
 		},
 		mounted: function() {
 			this.$nextTick(function() {
@@ -322,7 +351,7 @@
 
 				//选择结点或者边
 				network.on("select", function(event) {
-					console.log(event);
+					// console.log(event);
 					if (event.nodes.length != 0) {
 						//选择结点
 						var node = _this.nodes.get(event.nodes[0]);
@@ -374,6 +403,24 @@
 							flag: true
 						};
 					}
+				});
+
+				network.on("deselectNode", function(event) {
+					// console.log(event);
+					_this.chosenFlowRelation.flag = false;
+					_this.chosenTransition.flag = false;
+					_this.chosenPlace.flag = false;
+					_this.chosenPlace.start = false;
+					_this.chosenPlace.end = false;
+				});
+
+				network.on("deselectEdge", function(event) {
+					// console.log(event);
+					_this.chosenFlowRelation.flag = false;
+					_this.chosenTransition.flag = false;
+					_this.chosenPlace.flag = false;
+					_this.chosenPlace.start = false;
+					_this.chosenPlace.end = false;
 				});
 			},
 
@@ -464,7 +511,25 @@
 					}
 					this.places.splice(index, 1);
 				}
+
 				this.nodes.remove(id);
+				var _this = this;
+				this.edges.forEach(function(value) {
+					if (id == value.from || id == value.to) {
+						_this.edges.remove(value.id);
+					}
+				});
+				for (var i = 0; i < this.flowRelations.length; i++) {
+					if (
+						id == this.flowRelations[i].from ||
+						id == this.flowRelations[i].to
+					) {
+						this.flowRelations.splice(i, 1);
+						i--; //如果不减，将漏掉一个元素
+					}
+				}
+				console.log(this.edges);
+				console.log(this.flowRelations);
 			},
 
 			//选择边的方向（从库所到变迁或从变迁到库所）
@@ -522,6 +587,169 @@
 				this.currentProject = JSON.parse(
 					sessionStorage.getItem("currentProject")
 				);
+			},
+
+			//保存petri网
+			savePetriNet: function() {
+				var exist = false;
+				console.log(this.petriNet);
+				for (var i = 0; i < this.petriNets.length; i++) {
+					console.log(this.petriNet);
+					if (this.petriNet == this.petriNets[i].label) {
+						exist = true;
+						break;
+					}
+				}
+				if (exist) {
+					this.$confirm("该petri网已经存在, 是否修改?", "提示", {
+						confirmButtonText: "确定",
+						cancelButtonText: "取消",
+						type: "warning"
+					})
+						.then(() => {
+							var storage = window.localStorage;
+
+							var petriTemp = {
+								places: this.places,
+								transitions: this.transitions,
+								flowRelations: this.flowRelations
+							};
+
+							storage.setItem(
+								"petriNet_" + this.petriNet,
+								JSON.stringify(petriTemp)
+							);
+						})
+						.catch(() => {
+							return;
+						});
+				} else {
+					var storage = window.localStorage;
+
+					var petriTemp = {
+						places: this.places,
+						transitions: this.transitions,
+						flowRelations: this.flowRelations
+					};
+
+					this.petriNets.push({
+						value: this.petriNet,
+						label: this.petriNet
+					});
+					storage.setItem(
+						"petriNet_" + this.petriNet,
+						JSON.stringify(petriTemp)
+					);
+				}
+			},
+
+			//从localstorage获取已保存petri网信息
+			getPetriNets: function() {
+				var storage = window.localStorage;
+				for (var i = 0, len = storage.length; i < len; i++) {
+					var str = storage.key(i);
+					if (str.split("_", 1)[0] == "petriNet") {
+						this.petriNets.push({
+							value: str.slice(9),
+							label: str.slice(9)
+						});
+					}
+				}
+			},
+
+			//编辑petri网
+			editPetriNet: function() {
+				console.log(this.chosenPetriNet);
+				if (this.chosenPetriNet == "new petriNet") {
+					console.log(1111);
+					this.places = [
+						//库所集
+						{
+							placeId: 0,
+							placeName: "start"
+						},
+						{
+							placeId: 1,
+							placeName: "end"
+						}
+					];
+
+					this.transitions = [];
+					this.flowRelations = [];
+
+					this.nodes.clear();
+					this.edges.clear();
+
+					//创建结点数据集
+					this.nodes.add([
+						{ id: 0, label: "start", group: "start", title: "id:0" },
+						{ id: 1, label: "end", group: "dots", title: "id:1" }
+					]);
+
+					return;
+				}
+
+				var storage = window.localStorage;
+
+				var json = storage.getItem("petriNet_" + this.chosenPetriNet);
+				var petriTemp = JSON.parse(json);
+				console.log(petriTemp);
+				this.places = petriTemp.places;
+				this.transitions = petriTemp.transitions;
+				this.flowRelations = petriTemp.flowRelations;
+				console.log(this.places);
+
+				this.nodes.clear();
+				this.edges.clear();
+
+				this.nodes.add({
+					id: 0,
+					label: "start",
+					group: "start",
+					title: "id:0"
+				});
+
+				for (var i = 0; i < this.places.length; i++) {
+					if (this.places[i].placeId != 0) {
+						this.nodes.add({
+							id: this.places[i].placeId,
+							label: this.places[i].placeName,
+							group: "dots",
+							title: "id:" + this.places[i].placeId
+						});
+					}
+				}
+
+				for (var j = 0; j < this.transitions.length; j++) {
+					this.nodes.add({
+						id: this.transitions[j].transitionId,
+						label: this.transitions[j].transitionName,
+						group: "squares",
+						title: "id:" + this.transitions[j].transitionId
+					});
+				}
+
+				for (var k = 0; k < this.flowRelations.length; k++) {
+					this.edges.add({
+						from: this.flowRelations[k].from,
+						to: this.flowRelations[k].to
+					});
+				}
+			},
+
+			//删除保存的petri网
+			deletePetriNet: function() {
+				var index = 0;
+				for (var i = 0; i < this.petriNets.length; i++) {
+					if (this.petriNets[i].label == this.chosenPetriNet) {
+						index = i;
+						break;
+					}
+				}
+				this.petriNets.splice(index, 1);
+
+				var storage = window.localStorage;
+				storage.removeItem("petriNet_" + this.chosenPetriNet);
 			},
 
 			//提交petri网信息
@@ -648,10 +876,10 @@
 
 	#network-corner {
 		/* position: absolute;
-																														    margin-top: -202px;
-																														    margin-left: 498px;
-																														    width: 200px;
-																														    height: 200px; */
+																																																																																																																							margin-top: -202px;
+																																																																																																																							margin-left: 498px;
+																																																																																																																							width: 200px;
+																																																																																																																							height: 200px; */
 		border-top: 1px solid #ebeef5;
 		border-left: 1px solid #ebeef5;
 		border-bottom: 0px;
@@ -677,7 +905,7 @@
 	.corner-normal {
 		position: absolute;
 		margin-top: -202px;
-		margin-left: 498px;
+		margin-left: 598px;
 		width: 200px;
 		height: 200px;
 	}
