@@ -35,13 +35,13 @@
           </el-table-column>
           <el-table-column prop="createdTime" label="创建时间" sortable  show-overflow-tooltip>
           </el-table-column>
-          <el-table-column prop="rawLog" label="原始日志" sortable>
+          <!-- <el-table-column prop="rawLog" label="原始日志" sortable>
           </el-table-column>
           <el-table-column prop="normalizedLog" label="规范日志" show-overflow-tooltip sortable>
-          </el-table-column>
+          </el-table-column> -->
           <el-table-column label="操作" width="300">
             <span slot-scope="scope">
-              <el-button size="mini" type="primary" plain @click="mine(scope.row)"><i class="fa fa-caret-square-o-right"></i> 挖掘</el-button>
+              <!-- <el-button size="mini" type="primary" plain @click="mine(scope.row)"><i class="fa fa-caret-square-o-right"></i> 挖掘</el-button> -->
               <el-button size="mini" type="primary" plain @click="download(scope.row)"><i class="fa fa-download"></i> 下载</el-button>
               <el-button size="mini" type="primary" plain @click="deleteSingleEventLog(scope.row)"><i class="fa fa-trash-o fa-lg"></i> 删除</el-button>
             </span>
