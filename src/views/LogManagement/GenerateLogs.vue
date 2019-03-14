@@ -778,6 +778,12 @@
 					});
 					return;
 				}
+				const loading = this.$loading({
+					lock: true,
+					text: "Loading",
+					spinner: "el-icon-loading",
+					background: "rgba(0, 0, 0, 0.7)"
+				});
 				var placesTemp = {};
 				for (var i = 0; i < this.places.length; i++) {
 					placesTemp[this.places[i].placeId] = this.places[i];
@@ -801,6 +807,7 @@
 				};
 				console.log(obj);
 				generateEventLog(obj).then(data => {
+					loading.close();
 					console.log(data);
 					if (data.code == -1) {
 						this.$notify.error({
@@ -876,10 +883,10 @@
 
 	#network-corner {
 		/* position: absolute;
-																																																																																																																							margin-top: -202px;
-																																																																																																																							margin-left: 498px;
-																																																																																																																							width: 200px;
-																																																																																																																							height: 200px; */
+																																																																																																																								margin-top: -202px;
+																																																																																																																								margin-left: 498px;
+																																																																																																																								width: 200px;
+																																																																																																																								height: 200px; */
 		border-top: 1px solid #ebeef5;
 		border-left: 1px solid #ebeef5;
 		border-bottom: 0px;
